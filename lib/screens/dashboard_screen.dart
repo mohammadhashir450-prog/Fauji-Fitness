@@ -1,473 +1,269 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/user.dart';
 import '../providers/user_provider.dart';
-import '../providers/weight_provider.dart';
-import '../widgets/fitness_widgets.dart';
-import '../utils/scaffold_keys.dart';
+import '../providers/step_provider.dart'; // <-- StepProvider ka import add kiya
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Naye Provider architecture se user aur steps ka data fetch kiya
     final user = context.watch<UserProvider>().user;
-    final weightProv = context.watch<WeightProvider>();
-    final latestWeight = weightProv.entries.isEmpty ? null : weightProv.entries.last.weightKg;
-    final bmi = _bmiValue(user, latestWeight);
-    final latestEntry = weightProv.entries.isNotEmpty ? weightProv.entries.last : null;
-    final previousEntry = weightProv.entries.length > 1 ? weightProv.entries[weightProv.entries.length - 2] : null;
-    final weightDelta = latestEntry != null && previousEntry != null ? latestEntry.weightKg - previousEntry.weightKg : null;
-    final currentRem = latestWeight == null ? null : (2200 - (latestWeight * 10)).round();
+    final stepData = context.watch<StepProvider>();
+    const neonGreen = Color(0xFFC7F000);
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B0D0A),
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            const CircleAvatar(radius: 14, backgroundColor: Color(0xFFC7F000), child: CircleAvatar(radius: 12, backgroundColor: Color(0xFF0B0D0A), child: Icon(Icons.fitness_center, size: 12, color: Color(0xFFC7F000)))),
-            const SizedBox(width: 10),
-            const Text('FAUJI FITNESS', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.4)),
-          ],
-        ),
-        actions: [
-          Builder(
-            builder: (context) => IconButton(
-              onPressed: () => appShellScaffoldKey.currentState?.openDrawer(),
-              icon: const Icon(Icons.menu_rounded, color: Color(0xFFC7F000)),
-            ),
-          ),
-          const SizedBox(width: 6),
-        ],
-      ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
-          children: [
-            _HeroProgressCard(
-              progress: latestWeight == null ? 0.0 : 0.82,
-              calories: latestWeight == null ? null : (latestWeight * 10).round(),
-              calorieGoal: latestWeight == null ? null : 2200,
-              heartPoints: latestWeight == null ? null : (latestWeight / 2).round(),
-              heartPointsGoal: latestWeight == null ? null : 60,
-              activeMins: latestWeight == null ? null : (latestWeight * 1.5).round(),
-              activeGoal: latestWeight == null ? null : 150,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _MiniMetricCard(
-                    title: 'WEIGHT',
-                    value: latestWeight == null ? 'Not set' : latestWeight.toStringAsFixed(1),
-                    suffix: latestWeight == null ? 'LOG WEIGHT' : 'LBS',
-                    icon: Icons.monitor_weight_outlined,
-                    accent: const Color(0xFFC7F000),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _MiniMetricCard(
-                    title: 'DELTA',
-                    value: weightDelta == null ? '—' : '${weightDelta >= 0 ? '+' : ''}${weightDelta.toStringAsFixed(1)}',
-                    suffix: weightDelta == null ? 'NO HISTORY' : 'LBS',
-                    icon: Icons.trending_up,
-                    accent: const Color(0xFFC7F000),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _MiniMetricCard(
-                    title: 'BMI',
-                    value: bmi == null ? 'Not set' : bmi.toStringAsFixed(1),
-                    suffix: bmi == null ? 'ADD HEIGHT' : _bmiTag(bmi),
-                    icon: Icons.favorite_border_rounded,
-                    accent: const Color(0xFFC7F000),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _MiniMetricCard(
-                    title: 'CALORIES',
-                    value: currentRem == null ? 'Not set' : currentRem.toString(),
-                    suffix: currentRem == null ? 'NO DATA' : 'REMAINING',
-                    icon: Icons.local_fire_department_outlined,
-                    accent: const Color(0xFFC7F000),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            const NeonSectionTitle(title: 'BODY METRICS'),
-            const SizedBox(height: 12),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.05,
-              children: const [
-                _RealMetricCard(
-                  icon: Icons.directions_walk_rounded,
-                  title: 'STEPS',
-                  value: null,
-                  subtitle: 'Connect a tracker to view real steps',
-                  accent: Color(0xFFC7F000),
-                ),
-                _RealMetricCard(
-                  icon: Icons.favorite_border_rounded,
-                  title: 'HEART RATE',
-                  value: null,
-                  subtitle: 'Connect a wearable for live BPM',
-                  accent: Color(0xFFC7F000),
-                ),
-                _RealMetricCard(
-                  icon: Icons.monitor_weight_outlined,
-                  title: 'BMI',
-                  value: null,
-                  subtitle: 'Add height and weight to calculate',
-                  accent: Color(0xFFC7F000),
-                ),
-                _RealMetricCard(
-                  icon: Icons.local_fire_department_outlined,
-                  title: 'WEIGHT LOGS',
-                  value: null,
-                  subtitle: 'Stored in app',
-                  accent: Color(0xFFC7F000),
-                ),
-              ],
-            ),
-            const SizedBox(height: 22),
-            _WorkoutBanner(onStart: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Workout details coming soon!')));
-            }),
-            const SizedBox(height: 22),
-            NeonSectionTitle(
-              title: 'YOUR FAVORITES',
-              actionLabel: 'VIEW ALL',
-              onAction: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved workouts coming soon!')));
-              },
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 180,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: const [
-                  _FavoriteCard(title: 'Heavy Lifting', tag: '45 MIN', icon: Icons.fitness_center),
-                  _FavoriteCard(title: 'Yoga Flow', tag: '30 MIN', icon: Icons.self_improvement),
-                  _FavoriteCard(title: 'HIIT Burner', tag: '20 MIN', icon: Icons.bolt),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static double? _bmiValue(UserProfile? user, double? latestWeight) {
-    if (user == null || user.heightCm == null || latestWeight == null) return null;
-    final h = user.heightM;
-    if (h == null || h == 0) return null;
-    return latestWeight / (h * h);
-  }
-
-  static String _bmiTag(double bmi) {
-    if (bmi < 18.5) return 'HEALTHY';
-    if (bmi < 25) return 'HEALTHY';
-    if (bmi < 30) return 'ELEVATED';
-    return 'HIGH';
-  }
-}
-
-class _HeroProgressCard extends StatelessWidget {
-  final double progress;
-  final int? calories;
-  final int? calorieGoal;
-  final int? heartPoints;
-  final int? heartPointsGoal;
-  final int? activeMins;
-  final int? activeGoal;
-
-  const _HeroProgressCard({
-    required this.progress,
-    required this.calories,
-    required this.calorieGoal,
-    required this.heartPoints,
-    required this.heartPointsGoal,
-    required this.activeMins,
-    required this.activeGoal,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final hasData = calories != null && calorieGoal != null;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF151B12),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 220,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CustomPaint(size: const Size(220, 220), painter: _RingPainter(hasData ? progress : 0.0)),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(hasData ? '${(progress * 100).round()}%' : '--', style: const TextStyle(color: Color(0xFFC7F000), fontSize: 38, fontWeight: FontWeight.w900)),
-                    const SizedBox(height: 6),
-                    const Text('DAILY GOAL', style: TextStyle(color: Colors.white54, letterSpacing: 1.6, fontWeight: FontWeight.w700)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          _ProgressRow(label: 'CALORIES', value: hasData ? '$calories / $calorieGoal' : 'Not set', accent: const Color(0xFFC7F000)),
-          const SizedBox(height: 10),
-          _ProgressRow(label: 'HEART POINTS', value: heartPoints == null ? 'Not set' : '$heartPoints / $heartPointsGoal', accent: const Color(0xFFC7F000)),
-          const SizedBox(height: 10),
-          _ProgressRow(label: 'ACTIVE MINS', value: activeMins == null ? 'Not set' : '$activeMins / $activeGoal', accent: const Color(0xFFC7F000)),
-        ],
-      ),
-    );
-  }
-}
-
-class _RingPainter extends CustomPainter {
-  final double progress;
-  _RingPainter(this.progress);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final rect = Rect.fromCircle(center: center, radius: size.width / 2 - 12);
-    final bg = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 14
-      ..strokeCap = StrokeCap.round
-      ..color = const Color(0xFF2C3316);
-    final outer = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 14
-      ..strokeCap = StrokeCap.round
-      ..color = const Color(0xFFC7F000);
-    final inner = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 14
-      ..strokeCap = StrokeCap.round
-      ..color = const Color(0xFF6A7C18);
-    canvas.drawArc(rect, -math.pi / 2, math.pi * 2, false, bg);
-    canvas.drawArc(rect.deflate(18), -math.pi / 2, math.pi * 2 * 0.65, false, inner);
-    canvas.drawArc(rect.deflate(36), -math.pi / 2, math.pi * 2 * progress, false, outer);
-  }
-
-  @override
-  bool shouldRepaint(covariant _RingPainter oldDelegate) => oldDelegate.progress != progress;
-}
-
-class _ProgressRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color accent;
-
-  const _ProgressRow({required this.label, required this.value, required this.accent});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(width: 2, height: 42, color: accent),
-        const SizedBox(width: 12),
-        Expanded(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.1)),
-              const SizedBox(height: 4),
-              Text(value, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+              // 1. Custom Header (Greeting & Avatar)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Ready to sweat,',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white54,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user == null ? 'COMMANDO!' : user.name.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: neonGreen, width: 2),
+                    ),
+                    child: const CircleAvatar(
+                      radius: 26,
+                      backgroundColor: Color(0xFF151B12),
+                      child: Icon(Icons.person, color: neonGreen, size: 30),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 40),
+
+              // 2. Main Activity Card (Steps Tracker)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF121826), // Dark Card Background
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.white10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: neonGreen.withValues(alpha: 0.05),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'DAILY STEPS',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        Icon(Icons.directions_run, color: neonGreen),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // Circular Progress & Steps Count
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          height: 140,
+                          width: 140,
+                          child: CircularProgressIndicator(
+                            // Real-time progress logic
+                            value: stepData.progress > 1.0 ? 1.0 : stepData.progress,
+                            strokeWidth: 12,
+                            backgroundColor: Colors.white10,
+                            color: neonGreen,
+                            strokeCap: StrokeCap.round,
+                          ),
+                        ),
+                        Column(
+                          children: [
+                            Text(
+                              '${stepData.steps}', // Real Steps
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              '/ ${stepData.dailyGoal}', // Real Goal
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // 3. Mini Stats Grid (Calories & Active Time)
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildMiniStatCard(
+                      icon: Icons.local_fire_department,
+                      title: 'CALORIES',
+                      value: '${stepData.caloriesBurned}', // Real Calories
+                      unit: 'kcal',
+                      color: Colors.orangeAccent,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildMiniStatCard(
+                      icon: Icons.timer,
+                      title: 'ACTIVE',
+                      value: '${stepData.activeMinutes}', // Real Active Minutes
+                      unit: 'mins',
+                      color: Colors.lightBlueAccent,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 40),
+
+              // 4. Start Workout Button
+              SizedBox(
+                width: double.infinity,
+                height: 64,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: neonGreen,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 10,
+                    shadowColor: neonGreen.withValues(alpha: 0.5),
+                  ),
+                  onPressed: () {
+                    // Yahan AI Camera screen ya Workout screen ka navigation aayega
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('AI Workout Starting Soon!')),
+                    );
+                  },
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.play_arrow_rounded, size: 32),
+                      SizedBox(width: 8),
+                      Text(
+                        'START WORKOUT',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 100), // Bottom Navigation se overlap bachane k liye
             ],
           ),
         ),
-      ],
+      ),
     );
   }
-}
 
-class _RealMetricCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String? value;
-  final String subtitle;
-  final Color accent;
-
-  const _RealMetricCard({required this.icon, required this.title, required this.value, required this.subtitle, required this.accent});
-
-  @override
-  Widget build(BuildContext context) {
+  // Helper function for mini stats cards
+  Widget _buildMiniStatCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required String unit,
+    required Color color,
+  }) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF151C12),
-        borderRadius: BorderRadius.circular(18),
+        color: const Color(0xFF121826),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Icon(icon, color: accent, size: 16),
-              const SizedBox(width: 6),
-              Flexible(child: Text(title, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700))),
-            ],
-          ),
-          Text(value ?? 'Not set', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
-          Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 10)),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniMetricCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String suffix;
-  final IconData icon;
-  final Color accent;
-
-  const _MiniMetricCard({required this.title, required this.value, required this.suffix, required this.icon, required this.accent});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 120,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: const Color(0xFF151B12), borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white10)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(children: [Icon(icon, size: 15, color: accent), const SizedBox(width: 6), Expanded(child: Text(title, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w700)))]),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
-          if (suffix.isNotEmpty) Text(suffix, style: const TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w700)),
-        ],
-      ),
-    );
-  }
-}
-
-class _WorkoutBanner extends StatelessWidget {
-  final VoidCallback onStart;
-  const _WorkoutBanner({required this.onStart});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 260,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        image: const DecorationImage(
-          image: NetworkImage('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=900&q=80'),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Stack(
-        children: [
-          Container(decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.black.withValues(alpha: 0.15), Colors.black.withValues(alpha: 0.84)]))),
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFC7F000), borderRadius: BorderRadius.circular(6)), child: const Text('WORKOUT OF THE DAY', style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.w800))),
-                const SizedBox(height: 10),
-                const Text('ELITE CORE\nCRUSH', style: TextStyle(color: Colors.white, fontSize: 30, height: 0.95, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 10),
-                const Text('Master stability and explosive power with this high-intensity core protocol designed for elite athletes.', style: TextStyle(color: Colors.white70, height: 1.4)),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: 170,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(backgroundColor: const Color(0xFFC7F000), foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(vertical: 16)),
-                    onPressed: onStart,
-                    child: const Text('START NOW'),
-                  ),
-                )
-              ],
+          Icon(icon, color: color, size: 28),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white54,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FavoriteCard extends StatelessWidget {
-  final String title;
-  final String tag;
-  final IconData icon;
-  const _FavoriteCard({required this.title, required this.tag, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 175,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(color: const Color(0xFF151B12), borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white10)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-              child: Container(
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=800&q=80'),
-                    fit: BoxFit.cover,
-                  ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
                 ),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Align(alignment: Alignment.centerRight, child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFC7F000), borderRadius: BorderRadius.circular(6)), child: Text(tag, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800)))),
-                const SizedBox(height: 8),
-                Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 6),
-                Row(children: [Icon(icon, color: const Color(0xFFC7F000), size: 16), const Spacer(), const Icon(Icons.favorite_border, color: Colors.white70, size: 18)]),
-              ],
-            ),
+              const SizedBox(width: 4),
+              Text(
+                unit,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.white54,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 }
-
-// Local drawer removed; AppShell provides the global hamburger drawer for all tabs.

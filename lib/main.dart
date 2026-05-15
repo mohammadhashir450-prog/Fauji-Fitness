@@ -5,6 +5,7 @@ import 'services/storage_service.dart';
 import 'providers/user_provider.dart';
 import 'providers/weight_provider.dart';
 import 'providers/navigation_provider.dart';
+import 'providers/step_provider.dart'; // <-- StepProvider import add kar diya
 import 'screens/dashboard_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/weight_tracker_screen.dart';
@@ -91,6 +92,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => UserProvider(storage)..load()),
         ChangeNotifierProvider(create: (_) => WeightProvider(storage)..load()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
+        ChangeNotifierProvider(create: (_) => StepProvider()), // <-- YE LINE ADD KAR DI GAYI HAI
       ],
       child: Consumer<UserProvider>(
         builder: (context, userProv, _) {

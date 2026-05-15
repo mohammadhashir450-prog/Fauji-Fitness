@@ -10,6 +10,7 @@ import 'screens/profile_screen.dart';
 import 'screens/weight_tracker_screen.dart';
 import 'screens/community_screen.dart';
 import 'screens/splash_screen.dart';
+import 'models/user.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +19,9 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   final StorageService storage;
-  const MyApp({super.key, StorageService? storage}) : storage = storage ?? const StorageService();
+
+  const MyApp({super.key, StorageService? storage})
+      : storage = storage ?? const StorageService();
 
   ThemeData _buildTheme({required bool dark, required Color neonGreen}) {
     final scaffoldBg = dark ? const Color(0xFF0B0D0A) : Colors.white;
@@ -61,7 +64,10 @@ class MyApp extends StatelessWidget {
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return IconThemeData(color: selected ? Colors.black : secondary, size: 24);
+          return IconThemeData(
+            color: selected ? Colors.black : secondary,
+            size: 24,
+          );
         }),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
@@ -78,7 +84,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final neonGreen = const Color(0xFFC7F000);
+    const neonGreen = Color(0xFFC7F000); // Made this a const directly
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider(storage)..load()),
@@ -105,27 +112,62 @@ class MyApp extends StatelessWidget {
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
+  // Public helper to access state from descendant contexts
+  static dynamic of(BuildContext context) => context.findAncestorStateOfType<_AppShellState>();
+
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
 class _AppShellState extends State<AppShell> {
+  // FIX: Scaffold key must be initialized locally here, not imported from outside
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   void setIndex(int index) {
     context.read<NavigationProvider>().setIndex(index);
+  }
+
+  void openHamburgerMenu() {
+    _scaffoldKey.currentState?.openDrawer();
+  }
+
+  void navigateFromDrawer(int index) {
+    _scaffoldKey.currentState?.closeDrawer();
+    setIndex(index);
+  }
+
+  double? _bmiValue(UserProfile? user, double? latestWeight) {
+    if (user == null || user.heightCm == null || latestWeight == null) return null;
+    final h = user.heightM;
+    if (h == null || h == 0) return null;
+    return latestWeight / (h * h);
   }
 
   @override
   Widget build(BuildContext context) {
     final nav = context.watch<NavigationProvider>();
-    final _index = nav.index;
-    final _pages = const [
+    final user = context.watch<UserProvider>().user;
+    final weightProv = context.watch<WeightProvider>();
+
+    final latestWeight = weightProv.entries.isEmpty ? null : weightProv.entries.last.weightKg;
+    final bmi = _bmiValue(user, latestWeight);
+    final index = nav.index;
+
+    const pages = [
       DashboardScreen(),
       WeightTrackerScreen(),
       CommunityScreen(),
       ProfileScreen(),
     ];
+
     return Scaffold(
-      body: IndexedStack(index: _index, children: _pages),
+      key: _scaffoldKey, // Using the locally initialized key
+      drawer: _GlobalFitnessDrawer(
+        user: user,
+        bmi: bmi,
+        onNavigate: navigateFromDrawer,
+      ),
+      body: IndexedStack(index: index, children: pages),
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         decoration: BoxDecoration(
@@ -143,7 +185,7 @@ class _AppShellState extends State<AppShell> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: NavigationBar(
-            selectedIndex: _index,
+            selectedIndex: index,
             onDestinationSelected: (value) => context.read<NavigationProvider>().setIndex(value),
             backgroundColor: Theme.of(context).colorScheme.surface,
             indicatorColor: const Color(0xFFC7F000),
@@ -158,6 +200,79 @@ class _AppShellState extends State<AppShell> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _GlobalFitnessDrawer extends StatelessWidget {
+  final UserProfile? user;
+  final double? bmi;
+  final ValueChanged<int> onNavigate;
+
+  const _GlobalFitnessDrawer({
+    required this.user,
+    required this.bmi,
+    required this.onNavigate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bmiText = bmi == null ? 'Set profile to unlock insights' : 'BMI ${bmi!.toStringAsFixed(1)}';
+
+    return Drawer(
+      backgroundColor: const Color(0xFF0B0D0A),
+      child: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF151B12),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 24,
+                      backgroundColor: Color(0xFFC7F000),
+                      child: Icon(Icons.person, color: Colors.black),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user?.name ?? 'Guest',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(bmiText, style: const TextStyle(color: Colors.white54)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            _drawerItem(Icons.home, 'Home', () => onNavigate(0)),
+            _drawerItem(Icons.monitor_weight, 'Weight Tracker', () => onNavigate(1)),
+            _drawerItem(Icons.groups, 'Community', () => onNavigate(2)),
+            _drawerItem(Icons.person, 'Profile', () => onNavigate(3)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _drawerItem(IconData icon, String title, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: const Color(0xFFC7F000)),
+      title: Text(title, style: const TextStyle(color: Colors.white)),
+      onTap: onTap,
     );
   }
 }

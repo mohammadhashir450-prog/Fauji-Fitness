@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/user.dart';
 import '../providers/user_provider.dart';
+import '../utils/scaffold_keys.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -67,7 +68,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none_rounded, color: Color(0xFFC7F000))),
+          Builder(
+            builder: (context) => IconButton(
+              onPressed: () => appShellScaffoldKey.currentState?.openDrawer(),
+              icon: const Icon(Icons.menu_rounded, color: Color(0xFFC7F000)),
+            ),
+          ),
           const SizedBox(width: 6),
         ],
       ),
@@ -288,7 +294,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ? () async {
                                 if (!_formKey.currentState!.validate()) return;
                                 _formKey.currentState!.save();
+                                final messenger = ScaffoldMessenger.of(context);
                                 final userProvider = context.read<UserProvider>();
+
                                 await userProvider.createOrUpdate(
                                   name: _name!,
                                   heightCm: _height,
@@ -298,8 +306,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   memberCategory: _memberCategory,
                                   darkMode: _darkMode,
                                 );
+
                                 if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile saved successfully')));
+                                messenger.showSnackBar(const SnackBar(content: Text('Profile saved successfully')));
                               }
                             : null,
                         icon: const Icon(Icons.save_rounded),

@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/user.dart';
-import '../providers/navigation_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/weight_provider.dart';
 import '../widgets/fitness_widgets.dart';
+import '../utils/scaffold_keys.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -37,14 +37,13 @@ class DashboardScreen extends StatelessWidget {
         actions: [
           Builder(
             builder: (context) => IconButton(
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              icon: const Icon(Icons.notifications_none_rounded),
+              onPressed: () => appShellScaffoldKey.currentState?.openDrawer(),
+              icon: const Icon(Icons.menu_rounded, color: Color(0xFFC7F000)),
             ),
           ),
           const SizedBox(width: 6),
         ],
       ),
-      drawer: _FitnessDrawer(user: user, bmi: bmi),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
@@ -116,34 +115,34 @@ class DashboardScreen extends StatelessWidget {
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
               childAspectRatio: 1.05,
-              children: [
+              children: const [
                 _RealMetricCard(
                   icon: Icons.directions_walk_rounded,
                   title: 'STEPS',
                   value: null,
                   subtitle: 'Connect a tracker to view real steps',
-                  accent: const Color(0xFFC7F000),
+                  accent: Color(0xFFC7F000),
                 ),
                 _RealMetricCard(
                   icon: Icons.favorite_border_rounded,
                   title: 'HEART RATE',
                   value: null,
                   subtitle: 'Connect a wearable for live BPM',
-                  accent: const Color(0xFFC7F000),
+                  accent: Color(0xFFC7F000),
                 ),
                 _RealMetricCard(
                   icon: Icons.monitor_weight_outlined,
                   title: 'BMI',
-                  value: bmi == null ? null : bmi.toStringAsFixed(1),
-                  subtitle: bmi == null ? 'Add height and weight to calculate' : _bmiTag(bmi),
-                  accent: const Color(0xFFC7F000),
+                  value: null,
+                  subtitle: 'Add height and weight to calculate',
+                  accent: Color(0xFFC7F000),
                 ),
                 _RealMetricCard(
                   icon: Icons.local_fire_department_outlined,
                   title: 'WEIGHT LOGS',
-                  value: '${weightProv.entries.length}',
-                  subtitle: weightProv.entries.isEmpty ? 'No entries yet' : 'Stored in app',
-                  accent: const Color(0xFFC7F000),
+                  value: null,
+                  subtitle: 'Stored in app',
+                  accent: Color(0xFFC7F000),
                 ),
               ],
             ),
@@ -179,7 +178,8 @@ class DashboardScreen extends StatelessWidget {
 
   static double? _bmiValue(UserProfile? user, double? latestWeight) {
     if (user == null || user.heightCm == null || latestWeight == null) return null;
-    final h = user.heightM!;
+    final h = user.heightM;
+    if (h == null || h == 0) return null;
     return latestWeight / (h * h);
   }
 
@@ -470,57 +470,4 @@ class _FavoriteCard extends StatelessWidget {
   }
 }
 
-class _FitnessDrawer extends StatelessWidget {
-  final UserProfile? user;
-  final double? bmi;
-  const _FitnessDrawer({required this.user, required this.bmi});
-
-  @override
-  Widget build(BuildContext context) {
-    final bmiText = bmi == null ? 'Set profile to unlock insights' : 'BMI ${bmi!.toStringAsFixed(1)}';
-    return Drawer(
-      backgroundColor: const Color(0xFF0B0D0A),
-      child: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: const Color(0xFF151B12), borderRadius: BorderRadius.circular(22), border: Border.all(color: Colors.white10)),
-                child: Row(
-                  children: [
-                    const CircleAvatar(radius: 24, backgroundColor: Color(0xFFC7F000), child: Icon(Icons.person, color: Colors.black)),
-                    const SizedBox(width: 12),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(user?.name ?? 'Guest', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)), const SizedBox(height: 4), Text(bmiText, style: const TextStyle(color: Colors.white54))])),
-                  ],
-                ),
-              ),
-            ),
-            _drawerItem(context, Icons.home, 'Home', () {
-              // set Home tab
-              context.read<NavigationProvider>().setIndex(0);
-              Navigator.pop(context);
-            }),
-            _drawerItem(context, Icons.monitor_weight, 'Weight Tracker', () {
-              context.read<NavigationProvider>().setIndex(1);
-              Navigator.pop(context);
-            }),
-            _drawerItem(context, Icons.groups, 'Community', () {
-              context.read<NavigationProvider>().setIndex(2);
-              Navigator.pop(context);
-            }),
-            _drawerItem(context, Icons.person, 'Profile', () {
-              context.read<NavigationProvider>().setIndex(3);
-              Navigator.pop(context);
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _drawerItem(BuildContext context, IconData icon, String title, VoidCallback onTap) {
-    return ListTile(leading: Icon(icon, color: const Color(0xFFC7F000)), title: Text(title, style: const TextStyle(color: Colors.white)), onTap: onTap);
-  }
-}
+// Local drawer removed; AppShell provides the global hamburger drawer for all tabs.

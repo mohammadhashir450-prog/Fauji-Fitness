@@ -407,7 +407,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
         ),
         validator: validator,
-      );
+      ),
+    );
   }
 
   Widget _buildDropdown<T>({

@@ -38,6 +38,12 @@ dependencies:
   fl_chart: ^0.55.2
   intl: ^0.18.1
 
+  # New architecture dependencies
+  flutter_riverpod: ^2.3.6
+  go_router: ^7.1.0
+  flutter_screenutil: ^5.8.4
+  firebase_auth: ^4.19.6
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

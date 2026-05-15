@@ -9,15 +9,14 @@ final stepRepoProvider = Provider<StepRepository>((ref) => StepRepositoryImpl(re
 
 final stepControllerProvider = StateNotifierProvider<StepController, int>((ref) {
   final repo = ref.watch(stepRepoProvider);
-  return StepController(repo, ref);
+  return StepController(repo);
 });
 
 class StepController extends StateNotifier<int> {
   final StepRepository _repo;
-  final Ref _ref;
   StreamSubscription<int>? _sub;
 
-  StepController(this._repo, this._ref) : super(0) {
+  StepController(this._repo) : super(0) {
     _sub = _repo.steps().listen((c) => state = c);
   }
 

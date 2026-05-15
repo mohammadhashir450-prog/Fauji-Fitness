@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/user_provider.dart';
-import '../providers/step_provider.dart'; // <-- StepProvider ka import add kiya
+import '../providers/step_provider.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Naye Provider architecture se user aur steps ka data fetch kiya
     final user = context.watch<UserProvider>().user;
     final stepData = context.watch<StepProvider>();
     const neonGreen = Color(0xFFC7F000);
@@ -83,7 +82,7 @@ class DashboardScreen extends StatelessWidget {
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
+                      children: const [
                         Text(
                           'DAILY STEPS',
                           style: TextStyle(
@@ -267,3 +266,4 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 }
+

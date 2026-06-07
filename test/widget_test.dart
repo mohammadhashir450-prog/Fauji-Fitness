@@ -1,20 +1,18 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+// This is a basic Flutter widget test for Fauji Fitness.
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:jym_app/main.dart';
+import 'package:fauji_fitness/main.dart';
 
 void main() {
-  testWidgets('App shows dashboard', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('App shows branding or loading status on splash', (WidgetTester tester) async {
+    // 1. App ko build karein aur pehla frame trigger karein.
     await tester.pumpWidget(const MyApp());
 
-    // Verify that dashboard title is shown.
-    expect(find.text('Jym Pro'), findsOneWidget);
+    // 2. Verify karein ke aapka premium branding text screen par mojood hai ya nahi.
+    // Splash screen par hamara text 'FAUJI FITNESS' hai.
+    expect(find.text('FAUJI FITNESS'), findsAtLeastNWidgets(1));
+
+    // 3. Check karein ke splash screen par loading indicator ya status text dikh raha hai.
+    expect(find.text('Loading...'), findsOneWidget);
   });
 }

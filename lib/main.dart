@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'services/storage_service.dart';
+import 'services/auth_service.dart';
 import 'providers/user_provider.dart';
 import 'providers/weight_provider.dart';
 import 'providers/navigation_provider.dart';
-import 'providers/step_provider.dart'; // <-- StepProvider import add kar diya
+import 'providers/step_provider.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/weight_tracker_screen.dart';
@@ -15,6 +17,14 @@ import 'models/user.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint("Firebase initialization failed: \$e");
+  }
+
   runApp(const MyApp());
 }
 
@@ -85,14 +95,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const neonGreen = Color(0xFFC7F000); // Made this a const directly
+    const neonGreen = Color(0xFFC7F000);
 
     return MultiProvider(
       providers: [
+        Provider<AuthService>(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => UserProvider(storage)..load()),
         ChangeNotifierProvider(create: (_) => WeightProvider(storage)..load()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
-        ChangeNotifierProvider(create: (_) => StepProvider()), // <-- YE LINE ADD KAR DI GAYI HAI
+        ChangeNotifierProvider(create: (_) => StepProvider()),
       ],
       child: Consumer<UserProvider>(
         builder: (context, userProv, _) {
@@ -114,7 +125,6 @@ class MyApp extends StatelessWidget {
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
-  // Public helper to access state from descendant contexts
   static dynamic of(BuildContext context) => context.findAncestorStateOfType<_AppShellState>();
 
   @override
@@ -122,7 +132,6 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  // FIX: Scaffold key must be initialized locally here, not imported from outside
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   void setIndex(int index) {
@@ -134,7 +143,7 @@ class _AppShellState extends State<AppShell> {
   }
 
   void navigateFromDrawer(int index) {
-    _scaffoldKey.currentState?.closeDrawer();
+    Navigator.of(context).pop();
     setIndex(index);
   }
 
@@ -163,7 +172,7 @@ class _AppShellState extends State<AppShell> {
     ];
 
     return Scaffold(
-      key: _scaffoldKey, // Using the locally initialized key
+      key: _scaffoldKey,
       drawer: _GlobalFitnessDrawer(
         user: user,
         bmi: bmi,
@@ -264,6 +273,17 @@ class _GlobalFitnessDrawer extends StatelessWidget {
             _drawerItem(Icons.monitor_weight, 'Weight Tracker', () => onNavigate(1)),
             _drawerItem(Icons.groups, 'Community', () => onNavigate(2)),
             _drawerItem(Icons.person, 'Profile', () => onNavigate(3)),
+            const Spacer(),
+            _drawerItem(Icons.logout, 'Logout', () async {
+              await context.read<AuthService>().signOut();
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const SplashScreen()),
+                  (route) => false,
+                );
+              }
+            }),
+            const SizedBox(height: 16),
           ],
         ),
       ),

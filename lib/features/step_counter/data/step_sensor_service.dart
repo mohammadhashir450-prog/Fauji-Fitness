@@ -1,29 +1,37 @@
 import 'dart:async';
+import 'package:pedometer/pedometer.dart';
+import 'package:flutter/foundation.dart';
 
-/// Platform-specific sensor integration would go here. This is a stubbed
-/// service that simulates step events for the demo.
 class StepSensorService {
+  StreamSubscription<StepCount>? _stepCountSubscription;
   final _controller = StreamController<int>.broadcast();
-  int _count = 0;
-  Timer? _timer;
+  int _todayOffset = 0; // To calculate daily steps from total boot steps
 
   Stream<int> get stepsStream => _controller.stream;
 
   void start() {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 2), (_) {
-      _count += 12; // simulate steps
-      _controller.add(_count);
-    });
+    _stepCountSubscription = Pedometer.stepCountStream.listen(
+      _onStepCount,
+      onError: _onStepCountError,
+    );
+  }
+
+  void _onStepCount(StepCount event) {
+    // Note: Pedometer gives steps since boot.
+    // In a real app, you'd subtract the value recorded at the start of the day.
+    _controller.add(event.steps);
+  }
+
+  void _onStepCountError(error) {
+    debugPrint("Pedometer Error: $error");
   }
 
   void stop() {
-    _timer?.cancel();
-    _timer = null;
+    _stepCountSubscription?.cancel();
   }
 
   void dispose() {
-    _timer?.cancel();
+    stop();
     _controller.close();
   }
 }

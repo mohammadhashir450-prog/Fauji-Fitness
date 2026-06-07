@@ -13,14 +13,22 @@ class DashboardScreen extends StatelessWidget {
     final stepData = context.watch<StepProvider>();
     const neonGreen = Color(0xFFC7F000);
 
+    // Progress Calculations
+    final double stepProgress = stepData.progress > 1.0 ? 1.0 : stepData.progress;
+    final double heartProgress = stepData.heartPointsProgress > 1.0 ? 1.0 : stepData.heartPointsProgress;
+
+    // Distance in km (1 step ≈ 0.000762 km)
+    final String distanceKm = (stepData.steps * 0.000762).toStringAsFixed(2);
+
     return Scaffold(
+      backgroundColor: const Color(0xFF0B0D0A),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Custom Header (Greeting & Avatar)
+              // 1. Header Section
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -60,19 +68,19 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
 
-              // 2. Main Activity Card (Steps Tracker)
+              // 2. Activity Rings Card
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF121826), // Dark Card Background
-                  borderRadius: BorderRadius.circular(24),
+                  color: const Color(0xFF121826),
+                  borderRadius: BorderRadius.circular(32),
                   border: Border.all(color: Colors.white10),
                   boxShadow: [
                     BoxShadow(
-                      color: neonGreen.withValues(alpha: 0.05),
+                      color: neonGreen.withOpacity(0.05),
                       blurRadius: 30,
                       offset: const Offset(0, 10),
                     ),
@@ -80,56 +88,84 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
-                          'DAILY STEPS',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.5,
+                    Center(
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Heart Points Ring (Outer)
+                          SizedBox(
+                            height: 220,
+                            width: 220,
+                            child: CircularProgressIndicator(
+                              value: heartProgress,
+                              strokeWidth: 14,
+                              backgroundColor: Colors.white10,
+                              color: Colors.redAccent,
+                              strokeCap: StrokeCap.round,
+                            ),
                           ),
-                        ),
-                        Icon(Icons.directions_run, color: neonGreen),
+                          // Steps Ring (Inner)
+                          SizedBox(
+                            height: 175,
+                            width: 175,
+                            child: CircularProgressIndicator(
+                              value: stepProgress,
+                              strokeWidth: 14,
+                              backgroundColor: Colors.white10,
+                              color: neonGreen,
+                              strokeCap: StrokeCap.round,
+                            ),
+                          ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '${stepData.heartPoints}',
+                                style: const TextStyle(
+                                  fontSize: 56,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.redAccent,
+                                  height: 1.1,
+                                ),
+                              ),
+                              Text(
+                                '${stepData.steps}',
+                                style: const TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                  color: neonGreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 36),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.favorite, color: Colors.redAccent, size: 20),
+                        const SizedBox(width: 8),
+                        const Text('Heart Pts', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 32),
+                        const Icon(Icons.directions_run, color: neonGreen, size: 20),
+                        const SizedBox(width: 8),
+                        const Text('Steps', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                       ],
                     ),
+                    const SizedBox(height: 36),
+
+                    Container(height: 1, width: double.infinity, color: Colors.white10),
                     const SizedBox(height: 24),
-                    // Circular Progress & Steps Count
-                    Stack(
-                      alignment: Alignment.center,
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        SizedBox(
-                          height: 140,
-                          width: 140,
-                          child: CircularProgressIndicator(
-                            // Real-time progress logic
-                            value: stepData.progress > 1.0 ? 1.0 : stepData.progress,
-                            strokeWidth: 12,
-                            backgroundColor: Colors.white10,
-                            color: neonGreen,
-                            strokeCap: StrokeCap.round,
-                          ),
-                        ),
-                        Column(
-                          children: [
-                            Text(
-                              '${stepData.steps}', // Real Steps
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Text(
-                              '/ ${stepData.dailyGoal}', // Real Goal
-                              style: const TextStyle(
-                                color: Colors.white54,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
+                        _buildTextStat('${stepData.caloriesBurned}', 'Cal'),
+                        _buildTextStat(distanceKm, 'km'),
+                        _buildTextStat('${stepData.activeMinutes}', 'Move Min'),
                       ],
                     ),
                   ],
@@ -137,70 +173,10 @@ class DashboardScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // 3. Mini Stats Grid (Calories & Active Time)
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMiniStatCard(
-                      icon: Icons.local_fire_department,
-                      title: 'CALORIES',
-                      value: '${stepData.caloriesBurned}', // Real Calories
-                      unit: 'kcal',
-                      color: Colors.orangeAccent,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildMiniStatCard(
-                      icon: Icons.timer,
-                      title: 'ACTIVE',
-                      value: '${stepData.activeMinutes}', // Real Active Minutes
-                      unit: 'mins',
-                      color: Colors.lightBlueAccent,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 40),
+              // 3. Weekly Goals Dual-Rings
+              _buildWeeklyGoalsCard(stepData, neonGreen),
 
-              // 4. Start Workout Button
-              SizedBox(
-                width: double.infinity,
-                height: 64,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: neonGreen,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    elevation: 10,
-                    shadowColor: neonGreen.withValues(alpha: 0.5),
-                  ),
-                  onPressed: () {
-                    // Yahan AI Camera screen ya Workout screen ka navigation aayega
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('AI Workout Starting Soon!')),
-                    );
-                  },
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.play_arrow_rounded, size: 32),
-                      SizedBox(width: 8),
-                      Text(
-                        'START WORKOUT',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 100), // Bottom Navigation se overlap bachane k liye
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -208,55 +184,147 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  // Helper function for mini stats cards
-  Widget _buildMiniStatCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required String unit,
-    required Color color,
-  }) {
+  Widget _buildTextStat(String value, String title) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            color: Colors.lightBlueAccent,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.white70,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeeklyGoalsCard(StepProvider stepData, Color neonGreen) {
+    int achievedCount = 0;
+    List<Widget> ringWidgets = [];
+    DateTime now = DateTime.now();
+
+    for (int i = 0; i < 7; i++) {
+      int steps = stepData.weeklySteps[i];
+      int heartPts = steps ~/ 150;
+
+      if (steps >= stepData.dailyGoal) achievedCount++;
+
+      double stepProg = steps / stepData.dailyGoal;
+      double heartProg = heartPts / 30.0;
+
+      DateTime d = now.subtract(Duration(days: 6 - i));
+      String dayLetter = ['M', 'T', 'W', 'T', 'F', 'S', 'S'][d.weekday - 1];
+
+      ringWidgets.add(
+        Column(
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  height: 30, width: 30,
+                  child: CircularProgressIndicator(
+                    value: stepProg > 1.0 ? 1.0 : stepProg,
+                    strokeWidth: 3.5,
+                    color: neonGreen,
+                    backgroundColor: Colors.white10,
+                  ),
+                ),
+                SizedBox(
+                  height: 18, width: 18,
+                  child: CircularProgressIndicator(
+                    value: heartProg > 1.0 ? 1.0 : heartProg,
+                    strokeWidth: 3.5,
+                    color: Colors.redAccent,
+                    backgroundColor: Colors.white10,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              dayLetter,
+              style: TextStyle(
+                color: i == 6 ? neonGreen : Colors.white54,
+                fontSize: 12,
+                fontWeight: i == 6 ? FontWeight.w900 : FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: const Color(0xFF121826),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white54,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1,
-            ),
-          ),
-          const SizedBox(height: 4),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
               Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
+                'YOUR DAILY GOALS',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.5,
                 ),
               ),
-              const SizedBox(width: 4),
-              Text(
-                unit,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.white54,
-                  fontWeight: FontWeight.w600,
+              Icon(Icons.chevron_right_rounded, color: Colors.white54),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Last 7 days',
+            style: TextStyle(color: Colors.white54, fontSize: 13),
+          ),
+          const SizedBox(height: 24),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$achievedCount/7',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: neonGreen,
+                    ),
+                  ),
+                  const Text(
+                    'Achieved',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: ringWidgets,
                 ),
               ),
             ],
@@ -266,4 +334,3 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 }
-

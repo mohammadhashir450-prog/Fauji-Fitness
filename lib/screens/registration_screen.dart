@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../models/user.dart';
 import '../providers/user_provider.dart';
+import '../services/auth_service.dart';
 import 'login_screen.dart';
+import '../main.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -46,32 +48,45 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
 
     setState(() => _isLoading = true);
-    final userProvider = context.read<UserProvider>();
 
     try {
-      await userProvider.createOrUpdate(
-        name: _nameController.text,
-        sex: _selectedSex,
-        heightCm: double.tryParse(_heightController.text),
-        goal: _selectedGoal,
-        membershipType: _selectedMembership,
-        memberCategory: _selectedCategory,
-        darkMode: true,
+      final authService = context.read<AuthService>();
+      final userProvider = context.read<UserProvider>();
+
+      // 1. Firebase Auth Registration
+      final result = await authService.signUpWithEmail(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+        _nameController.text.trim(),
       );
 
-      if (!mounted) return;
+      if (result != null) {
+        // 2. Update Local/Global Provider State
+        await userProvider.createOrUpdate(
+          name: _nameController.text.trim(),
+          sex: _selectedSex,
+          heightCm: double.tryParse(_heightController.text),
+          goal: _selectedGoal,
+          membershipType: _selectedMembership,
+          memberCategory: _selectedCategory,
+          darkMode: true,
+        );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration successful! Please login.')),
-      );
+        if (!mounted) return;
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Registration successful! Welcome Warrior.')),
+        );
+
+        // 3. Navigate to Home
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const AppShell()),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration failed: $e')),
+        SnackBar(content: Text('Registration failed: ${e.toString()}')),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -426,7 +441,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         border: Border.all(color: Colors.white10),
       ),
       child: DropdownButtonFormField<T>(
-        initialValue: value,
+        value: value,
         items: items,
         onChanged: onChanged,
         decoration: InputDecoration(

@@ -1,7 +1,9 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/user_provider.dart'; // Apna sahi path check kar lijiye ga
+import '../main.dart'; // AppShell ko access karne ke liye
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -15,12 +17,29 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 2), () {
-      if (!mounted) return;
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    // 2 second ka delay taake user ko aapka zabardast UI nazar aaye
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    // UserProvider se data read karein
+    final userProvider = context.read<UserProvider>();
+
+    // Agar user ka data pehle se save hai (yani wo logged in hai)
+    if (userProvider.user != null) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const AppShell()),
+      );
+    } else {
+      // Agar data nahi hai to usay Login page par bhejein
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
-    });
+    }
   }
 
   @override

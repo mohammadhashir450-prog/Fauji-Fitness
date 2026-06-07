@@ -1,0 +1,23 @@
+{
+  "name": "jym-backend",
+  "version": "1.0.0",
+  "description": "Professional Backend for Jym App using Node.js and Firebase",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "lint": "node -e \"console.log('No linter configured')\"",
+    "test": "node -e \"console.log('No automated tests configured')\""
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "firebase-admin": "^11.11.0",
+    "helmet": "^7.0.0",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

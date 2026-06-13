@@ -136,6 +136,22 @@ class DashboardScreen extends StatelessWidget {
                                   color: neonGreen,
                                 ),
                               ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.favorite, color: Colors.redAccent, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    stepData.heartRate > 0 ? '${stepData.heartRate} BPM' : '-- BPM',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ],
@@ -166,6 +182,7 @@ class DashboardScreen extends StatelessWidget {
                         _buildTextStat('${stepData.caloriesBurned}', 'Cal'),
                         _buildTextStat(distanceKm, 'km'),
                         _buildTextStat('${stepData.activeMinutes}', 'Move Min'),
+                        _buildTextStat(stepData.heartRate > 0 ? '${stepData.heartRate}' : '--', 'BPM'),
                       ],
                     ),
                   ],

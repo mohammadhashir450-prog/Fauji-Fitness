@@ -47,5 +47,11 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSHealthShareUsageDescription</key>
+		<string>We need access to your health data to track your steps and heart rate for workout analysis.</string>
+		<key>NSHealthUpdateUsageDescription</key>
+		<string>We need permission to write workout data to track your fitness achievements.</string>
+		<key>NSMotionUsageDescription</key>
+		<string>We need access to motion sensors to track your steps in real-time when health data is unavailable.</string>
 	</dict>
 </plist>

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/weight_provider.dart';
+import '../providers/step_provider.dart';
 import '../widgets/fitness_widgets.dart';
 
 class WeightTrackerScreen extends StatefulWidget {
@@ -24,8 +25,10 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
     final bmi = _bmiFromWeight(latest);
     final goal = latest == null ? null : 178.0;
     final bodyFat = latest == null ? null : 14.8;
-    final currentSteps = 8432;
-    final heartRate = 72;
+    
+    final stepData = context.watch<StepProvider>();
+    final currentSteps = stepData.steps;
+    final heartRate = stepData.heartRate > 0 ? stepData.heartRate : 72;
 
     return Scaffold(
       appBar: AppBar(

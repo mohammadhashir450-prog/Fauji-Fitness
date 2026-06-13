@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:health/health.dart';
 import 'package:pedometer/pedometer.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class StepProvider extends ChangeNotifier {
   final Health _health = Health();
@@ -13,14 +14,16 @@ class StepProvider extends ChangeNotifier {
   Timer? _syncTimer;
 
   int _steps = 0;
+  int _heartRate = 0;
   int _dailyGoal = 10000;
   final int _dailyHeartGoal = 30;
   List<int> _weeklySteps = List.filled(7, 0);
   DateTime? _currentDay;
-  int _baselineSteps = 0;
+  int _lastSensorSteps = 0;
   bool _initialized = false;
 
   int get steps => _steps;
+  int get heartRate => _heartRate;
   int get dailyGoal => _dailyGoal;
   List<int> get weeklySteps => _weeklySteps;
   double get progress => _dailyGoal == 0 ? 0 : (_steps / _dailyGoal).clamp(0.0, 1.0);
@@ -36,6 +39,8 @@ class StepProvider extends ChangeNotifier {
   Future<void> _initializeTracking() async {
     if (_initialized) return;
     _initialized = true;
+
+    await _loadFromPrefs();
 
     await [Permission.activityRecognition, Permission.sensors].request();
     await _configureHealth();
@@ -60,13 +65,58 @@ class StepProvider extends ChangeNotifier {
     await syncStepsWithSystem();
   }
 
+  Future<void> _loadFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedDateStr = prefs.getString('step_tracker_date');
+      final todayStr = DateTime.now().toIso8601String().split('T')[0];
+
+      if (savedDateStr == todayStr) {
+        _steps = prefs.getInt('step_tracker_steps') ?? 0;
+        _lastSensorSteps = prefs.getInt('step_tracker_last_sensor') ?? 0;
+        _heartRate = prefs.getInt('step_tracker_heart_rate') ?? 0;
+        final savedDay = prefs.getString('step_tracker_current_day');
+        if (savedDay != null) {
+          _currentDay = DateTime.parse(savedDay);
+        }
+      } else {
+        _steps = 0;
+        _lastSensorSteps = 0;
+        _heartRate = 0;
+        _currentDay = DateTime.now();
+        await _saveToPrefs();
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading from prefs: $e');
+    }
+  }
+
+  Future<void> _saveToPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final todayStr = DateTime.now().toIso8601String().split('T')[0];
+      await prefs.setString('step_tracker_date', todayStr);
+      await prefs.setInt('step_tracker_steps', _steps);
+      await prefs.setInt('step_tracker_last_sensor', _lastSensorSteps);
+      await prefs.setInt('step_tracker_heart_rate', _heartRate);
+      if (_currentDay != null) {
+        await prefs.setString('step_tracker_current_day', _currentDay!.toIso8601String());
+      }
+    } catch (e) {
+      debugPrint('Error saving to prefs: $e');
+    }
+  }
+
   void _ensureDay(DateTime now) {
     final current = DateTime(now.year, now.month, now.day);
     if (_currentDay == null || _currentDay != current) {
       _currentDay = current;
-      _baselineSteps = 0;
       _steps = 0;
+      _lastSensorSteps = 0;
+      _heartRate = 0;
       _weeklySteps = List.filled(7, 0);
+      _saveToPrefs();
       notifyListeners();
     }
   }
@@ -77,34 +127,52 @@ class StepProvider extends ChangeNotifier {
 
     final today = DateTime(now.year, now.month, now.day);
     int newSteps = _steps;
+    int newHeartRate = _heartRate;
 
     try {
-      final authorized = await _health.requestAuthorization([HealthDataType.STEPS]);
+      final authorized = await _health.requestAuthorization([
+        HealthDataType.STEPS,
+        HealthDataType.HEART_RATE,
+      ]);
       if (authorized) {
         final stepsFromHealth = await _health.getTotalStepsInInterval(today, now);
         if (stepsFromHealth != null) {
           newSteps = stepsFromHealth;
-          _baselineSteps = stepsFromHealth;
         }
-      } else {
-        newSteps = _resolvePedometerFallback();
+
+        final List<HealthDataPoint> heartRateData = await _health.getHealthDataFromTypes(
+          types: [HealthDataType.HEART_RATE],
+          startTime: today,
+          endTime: now,
+        );
+
+        if (heartRateData.isNotEmpty) {
+          heartRateData.sort((a, b) => a.dateTo.compareTo(b.dateTo));
+          final latestPoint = heartRateData.last;
+          if (latestPoint.value is NumericHealthValue) {
+            newHeartRate = (latestPoint.value as NumericHealthValue).numericValue.round();
+          }
+        }
       }
-    } catch (_) {
-      newSteps = _resolvePedometerFallback();
+    } catch (e) {
+      debugPrint('Health sync failed: $e');
     }
 
+    bool changed = false;
     if (newSteps != _steps) {
       _steps = newSteps.clamp(0, 1000000);
+      changed = true;
+    }
+    if (newHeartRate != _heartRate) {
+      _heartRate = newHeartRate;
+      changed = true;
+    }
+
+    if (changed) {
       notifyListeners();
+      await _saveToPrefs();
       await _fetchWeeklyHistory();
     }
-  }
-
-  int _resolvePedometerFallback() {
-    if (_baselineSteps > 0) {
-      return _baselineSteps;
-    }
-    return _steps;
   }
 
   void _startPedometerFallback() {
@@ -112,16 +180,22 @@ class StepProvider extends ChangeNotifier {
     _pedometerSubscription = Pedometer.stepCountStream.listen(
       (event) {
         _ensureDay(DateTime.now());
-        if (_baselineSteps == 0) {
-          _baselineSteps = event.steps;
+        
+        if (_lastSensorSteps == 0) {
+          _lastSensorSteps = event.steps;
+        } else if (event.steps < _lastSensorSteps) {
+          _lastSensorSteps = event.steps;
+        } else {
+          final diff = event.steps - _lastSensorSteps;
+          if (diff > 0) {
+            _steps += diff;
+            _lastSensorSteps = event.steps;
+          }
         }
-        final dailySteps = event.steps - _baselineSteps;
-        final safeSteps = dailySteps < 0 ? 0 : dailySteps;
-        if (safeSteps != _steps) {
-          _steps = safeSteps;
-          notifyListeners();
-          _syncToFirestore();
-        }
+        
+        notifyListeners();
+        _saveToPrefs();
+        _syncToFirestore();
       },
       onError: (error) => debugPrint('Pedometer Error: $error'),
     );
@@ -158,6 +232,7 @@ class StepProvider extends ChangeNotifier {
       'steps': _steps,
       'calories': caloriesBurned,
       'heartPoints': heartPoints,
+      'heartRate': _heartRate,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }

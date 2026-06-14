@@ -10,6 +10,17 @@ class StorageService {
 
   static const _userKey = 'user_profile';
   static const _weightsKey = 'weight_entries';
+  static const _geminiKey = 'gemini_api_key';
+
+  Future<void> saveGeminiKey(String key) async {
+    final sp = await SharedPreferences.getInstance();
+    await sp.setString(_geminiKey, key);
+  }
+
+  Future<String?> loadGeminiKey() async {
+    final sp = await SharedPreferences.getInstance();
+    return sp.getString(_geminiKey);
+  }
 
   Future<void> saveUser(UserProfile user) async {
     final sp = await SharedPreferences.getInstance();

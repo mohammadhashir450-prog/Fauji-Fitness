@@ -98,12 +98,102 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
         _imageBytes = bytes;
       });
 
-      _analyzeFood();
+      if (_apiKey == null || _apiKey!.isEmpty) {
+        _promptApiKeyAndAnalyze();
+      } else {
+        _analyzeFood();
+      }
     } catch (e) {
       setState(() {
         _errorMessage = 'Failed to capture or select image: $e';
       });
     }
+  }
+
+  Future<void> _promptApiKeyAndAnalyze() async {
+    final TextEditingController tempController = TextEditingController();
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF121826),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          left: 20,
+          right: 20,
+          top: 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.vpn_key, color: Color(0xFFC7F000)),
+                const SizedBox(width: 10),
+                Text(
+                  'Enter Gemini API Key',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'A Gemini API Key is required to scan the image and identify the nutrition details. Get one for free from Google AI Studio.',
+              style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: tempController,
+              obscureText: true,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Paste API Key (AIzaSy...)',
+                hintStyle: const TextStyle(color: Colors.white38),
+                filled: true,
+                fillColor: Colors.black26,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                final key = tempController.text.trim();
+                if (key.isNotEmpty) {
+                  await _storageService.saveGeminiKey(key);
+                  setState(() {
+                    _apiKey = key;
+                    _apiKeyController.text = key;
+                  });
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                  }
+                  _analyzeFood();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC7F000),
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: const Text('Save & Scan Food', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _analyzeFood() async {
@@ -189,21 +279,19 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // API Key management panel
-            if (_apiKey == null || _isEditingKey) _buildApiKeyConfigCard(cardBgColor, primaryColor),
+            // Image scanner container is prominent at the top
+            _buildImageScannerContainer(cardBgColor, primaryColor),
 
             const SizedBox(height: 16),
 
-            // Image scanner container
-            _buildImageScannerContainer(cardBgColor, primaryColor),
+            // Action Buttons are always visible when not loading
+            if (!_isLoading) _buildScannerActionsRow(primaryColor),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // Action Buttons
-            if (_apiKey != null && !_isLoading) _buildScannerActionsRow(primaryColor),
-
-            // Loading state
-            if (_isLoading) _buildLoadingWidget(primaryColor),
+            // Info banner or API Key configuration card
+            if (_apiKey == null || _isEditingKey) 
+              _buildApiKeyConfigCard(cardBgColor, primaryColor),
 
             // Error state
             if (_errorMessage != null) _buildErrorCard(),
@@ -437,9 +525,6 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
     );
   }
 
-  Widget _buildLoadingWidget(Color primary) {
-    return const SizedBox.shrink(); // Handled inside stack overlay
-  }
 
   Widget _buildErrorCard() {
     return Padding(

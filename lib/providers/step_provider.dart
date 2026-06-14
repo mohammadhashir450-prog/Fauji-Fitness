@@ -136,7 +136,7 @@ class StepProvider extends ChangeNotifier {
       ]);
       if (authorized) {
         final stepsFromHealth = await _health.getTotalStepsInInterval(today, now);
-        if (stepsFromHealth != null) {
+        if (stepsFromHealth != null && stepsFromHealth > newSteps) {
           newSteps = stepsFromHealth;
         }
 
@@ -159,7 +159,7 @@ class StepProvider extends ChangeNotifier {
     }
 
     bool changed = false;
-    if (newSteps != _steps) {
+    if (newSteps > _steps) {
       _steps = newSteps.clamp(0, 1000000);
       changed = true;
     }
@@ -172,6 +172,7 @@ class StepProvider extends ChangeNotifier {
       notifyListeners();
       await _saveToPrefs();
       await _fetchWeeklyHistory();
+      await _syncToFirestore();
     }
   }
 
@@ -195,7 +196,6 @@ class StepProvider extends ChangeNotifier {
         
         notifyListeners();
         _saveToPrefs();
-        _syncToFirestore();
       },
       onError: (error) => debugPrint('Pedometer Error: $error'),
     );

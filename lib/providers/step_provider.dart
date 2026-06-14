@@ -20,6 +20,7 @@ class StepProvider extends ChangeNotifier {
   List<int> _weeklySteps = List.filled(7, 0);
   DateTime? _currentDay;
   int _lastSensorSteps = 0;
+  DateTime? _lastEventTime;
   bool _initialized = false;
 
   int get steps => _steps;
@@ -181,16 +182,38 @@ class StepProvider extends ChangeNotifier {
     _pedometerSubscription = Pedometer.stepCountStream.listen(
       (event) {
         _ensureDay(DateTime.now());
+        final now = DateTime.now();
+        final seconds = _lastEventTime == null ? 0.0 : now.difference(_lastEventTime!).inMilliseconds / 1000.0;
         
         if (_lastSensorSteps == 0) {
           _lastSensorSteps = event.steps;
+          _lastEventTime = now;
         } else if (event.steps < _lastSensorSteps) {
           _lastSensorSteps = event.steps;
+          _lastEventTime = now;
         } else {
           final diff = event.steps - _lastSensorSteps;
           if (diff > 0) {
-            _steps += diff;
+            bool isJerk = false;
+            if (seconds > 0.1) {
+              final stepsPerSecond = diff / seconds;
+              // Normal walking/running cannot physically exceed 4.0 steps per second.
+              // Any rate higher than this is ignored as a device shake or bump.
+              if (stepsPerSecond > 4.0) {
+                isJerk = true;
+                debugPrint('Pedometer Filter: Ignored $diff steps in $seconds seconds ($stepsPerSecond steps/sec) as false positive jerk.');
+              }
+            } else {
+              if (diff > 1) {
+                isJerk = true;
+              }
+            }
+
+            if (!isJerk) {
+              _steps += diff;
+            }
             _lastSensorSteps = event.steps;
+            _lastEventTime = now;
           }
         }
         

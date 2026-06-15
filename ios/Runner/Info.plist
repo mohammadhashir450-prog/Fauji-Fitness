@@ -57,5 +57,7 @@
 		<string>We need access to your camera to scan food items and detect their calories and nutritional values.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>We need access to your photo library to pick images of food items and analyze them.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>We need access to your location to suggest the best local restaurants and food spots for your scanned dishes.</string>
 	</dict>
 </plist>

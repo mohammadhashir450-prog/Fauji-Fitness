@@ -2,6 +2,26 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
+class RestaurantSpot {
+  final String name;
+  final String address;
+  final String specialty;
+
+  RestaurantSpot({
+    required this.name,
+    required this.address,
+    required this.specialty,
+  });
+
+  factory RestaurantSpot.fromJson(Map<String, dynamic> json) {
+    return RestaurantSpot(
+      name: json['name']?.toString() ?? json['restaurantName']?.toString() ?? 'Unknown Restaurant',
+      address: json['address']?.toString() ?? json['location']?.toString() ?? 'Nearby',
+      specialty: json['specialty']?.toString() ?? json['recommendedDish']?.toString() ?? '',
+    );
+  }
+}
+
 class FoodScanResult {
   final String foodName;
   final bool isFood;
@@ -10,6 +30,7 @@ class FoodScanResult {
   final double fat;
   final double carbs;
   final String description;
+  final List<RestaurantSpot> restaurants;
 
   FoodScanResult({
     required this.foodName,
@@ -19,6 +40,7 @@ class FoodScanResult {
     required this.fat,
     required this.carbs,
     required this.description,
+    required this.restaurants,
   });
 
   factory FoodScanResult.fromJson(Map<String, dynamic> json) {
@@ -36,6 +58,9 @@ class FoodScanResult {
       fat: toDouble(json['fat'] ?? json['fats']),
       carbs: toDouble(json['carbs'] ?? json['carbohydrates']),
       description: json['description']?.toString() ?? '',
+      restaurants: (json['restaurants'] as List?)
+              ?.map((item) => RestaurantSpot.fromJson(item as Map<String, dynamic>))
+              .toList() ?? [],
     );
   }
 }
@@ -44,6 +69,7 @@ class GeminiService {
   static Future<FoodScanResult> scanFoodImage({
     required Uint8List imageBytes,
     required String apiKey,
+    String? locationName,
   }) async {
     final models = [
       'gemini-2.0-flash',
@@ -61,7 +87,7 @@ class GeminiService {
 
         final base64Image = base64Encode(imageBytes);
 
-        const prompt = 'Analyze this image and identify the food item. '
+        String prompt = 'Analyze this image and identify the food item. '
             'If the image does not contain any food, set isFood to false. '
             'Provide the response as a single, valid JSON object with the following fields: '
             '"foodName" (string, name of the food, supporting all global and Pakistani cuisines such as Biryani, Karahi, Pulao, Nihari, Halwa Puri, Paratha, Samosa, burgers, pizzas, pastas, etc.), '
@@ -70,8 +96,15 @@ class GeminiService {
             '"protein" (number, estimation of protein in grams per serving), '
             '"fat" (number, estimation of fat in grams per serving), '
             '"carbs" (number, estimation of carbohydrates in grams per serving), '
-            '"description" (string, a brief 1-2 sentence description explaining the dish and its nutritional composition). '
-            'Ensure the JSON output is strictly formatted. Do not wrap the JSON object in markdown formatting or "```json" blocks. Return only raw, valid JSON.';
+            '"description" (string, a brief 1-2 sentence description explaining the dish and its nutritional composition), ';
+
+        if (locationName != null && locationName.isNotEmpty) {
+          prompt += '"restaurants" (array of objects, containing the top 3-4 best local restaurants/spots to eat this food item (or variations of it, e.g. Zinger burger if a burger is scanned) in or near the location "$locationName". Each object must have "name" (string, name of the restaurant), "address" (string, the branch name, street, or area name in "$locationName"), and "specialty" (string, the specific popular version of this food they are famous for)). ';
+        } else {
+          prompt += '"restaurants" (array of objects, containing the top 3-4 famous spots/chains to eat this food. Each object must have "name" (string), "address" (string, e.g., "Main branches / Nationwide"), and "specialty" (string)). ';
+        }
+
+        prompt += 'Ensure the JSON output is strictly formatted. Do not wrap the JSON object in markdown formatting or "```json" blocks. Return only raw, valid JSON.';
 
         final requestBody = {
           'contents': [

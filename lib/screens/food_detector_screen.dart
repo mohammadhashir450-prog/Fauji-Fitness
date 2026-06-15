@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import '../services/storage_service.dart';
 import '../services/gemini_service.dart';
 
@@ -23,6 +25,8 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
   String _loadingMessage = '';
   FoodScanResult? _scanResult;
   String? _errorMessage;
+  String? _currentLocality;
+  bool _isLocationLoading = false;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -31,6 +35,7 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
   void initState() {
     super.initState();
     _loadApiKey();
+    _fetchCurrentLocation();
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -39,6 +44,72 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
       parent: _animationController,
       curve: Curves.easeInOut,
     );
+  }
+
+  Future<void> _fetchCurrentLocation() async {
+    setState(() {
+      _isLocationLoading = true;
+    });
+
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          _currentLocality = null;
+          _isLocationLoading = false;
+        });
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(() {
+            _currentLocality = null;
+            _isLocationLoading = false;
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          _currentLocality = null;
+          _isLocationLoading = false;
+        });
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low,
+          timeLimit: Duration(seconds: 5),
+        ),
+      );
+
+      final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+      if (placemarks.isNotEmpty) {
+        final placemark = placemarks.first;
+        final city = placemark.locality ?? placemark.subAdministrativeArea ?? placemark.administrativeArea ?? '';
+        final state = placemark.administrativeArea ?? '';
+        setState(() {
+          if (city.isNotEmpty && state.isNotEmpty) {
+            _currentLocality = "$city, $state";
+          } else if (city.isNotEmpty) {
+            _currentLocality = city;
+          } else {
+            _currentLocality = state;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error getting location: $e');
+    } finally {
+      setState(() {
+        _isLocationLoading = false;
+      });
+    }
   }
 
   @override
@@ -224,6 +295,7 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
       final result = await GeminiService.scanFoodImage(
         imageBytes: _imageBytes!,
         apiKey: _apiKey!,
+        locationName: _currentLocality,
       );
 
       setState(() {
@@ -281,6 +353,10 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
           children: [
             // Image scanner container is prominent at the top
             _buildImageScannerContainer(cardBgColor, primaryColor),
+
+            const SizedBox(height: 16),
+
+            _buildLocationStatusBadge(primaryColor),
 
             const SizedBox(height: 16),
 
@@ -721,6 +797,201 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
           _buildMacroProgressBar('Carbs', _scanResult!.carbs, Colors.amberAccent, 'Energy Source'),
           const SizedBox(height: 12),
           _buildMacroProgressBar('Fats', _scanResult!.fat, Colors.redAccent, 'Hormones & Cell Recovery'),
+
+          const SizedBox(height: 24),
+
+          // Restaurant suggestions section title
+          Row(
+            children: [
+              Icon(Icons.restaurant_menu, color: primary, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Best Spots & Restaurants',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _currentLocality != null
+                ? 'Top spots to try this in $_currentLocality'
+                : 'Famous spots nationwide / globally',
+            style: const TextStyle(fontSize: 12, color: Colors.white54),
+          ),
+          const SizedBox(height: 12),
+
+          if (_scanResult!.restaurants.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF151B12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: const Center(
+                child: Text(
+                  'No restaurant suggestions available.',
+                  style: TextStyle(color: Colors.white54, fontSize: 13),
+                ),
+              ),
+            )
+          else
+            ..._scanResult!.restaurants.map((restaurant) => _buildRestaurantCard(restaurant, primary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationStatusBadge(Color primary) {
+    if (_isLocationLoading) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFF151B12),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: const Row(
+          children: [
+            SizedBox(
+              width: 16, height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC7F000))),
+            ),
+            SizedBox(width: 12),
+            Text(
+              'Fetching current location...',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final hasLoc = _currentLocality != null && _currentLocality!.isNotEmpty;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF121826),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: hasLoc ? primary.withValues(alpha: 0.2) : Colors.white10,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Icon(
+                  hasLoc ? Icons.location_on : Icons.location_off_outlined,
+                  color: hasLoc ? primary : Colors.white38,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        hasLoc ? 'Target Location' : 'Location Not Shared',
+                        style: TextStyle(
+                          color: hasLoc ? Colors.white70 : Colors.white38,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        hasLoc ? _currentLocality! : 'General suggestions only',
+                        style: TextStyle(
+                          color: hasLoc ? Colors.white : Colors.white54,
+                          fontSize: 13,
+                          fontWeight: hasLoc ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.my_location, color: primary, size: 20),
+            tooltip: 'Update Location',
+            onPressed: _fetchCurrentLocation,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRestaurantCard(RestaurantSpot spot, Color primary) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF151B12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.place, color: primary, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  spot.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                if (spot.specialty.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.star, color: primary, size: 14),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          spot.specialty,
+                          style: TextStyle(
+                            color: primary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Text(
+                  spot.address,
+                  style: const TextStyle(
+                    color: Colors.white54,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

@@ -233,7 +233,6 @@ class StepProvider extends ChangeNotifier {
       (event) async {
         await _ensureDay(DateTime.now());
         final now = DateTime.now();
-        final seconds = _lastEventTime == null ? 0.0 : now.difference(_lastEventTime!).inMilliseconds / 1000.0;
         
         if (_lastSensorSteps == 0) {
           _lastSensorSteps = event.steps;
@@ -243,30 +242,13 @@ class StepProvider extends ChangeNotifier {
           _lastEventTime = now;
         } else {
           final diff = event.steps - _lastSensorSteps;
-          if (diff > 0) {
-            bool isJerk = false;
-            if (_lastEventTime != null) {
-              if (seconds > 0.1) {
-                final stepsPerSecond = diff / seconds;
-                // Normal walking/running cannot physically exceed 4.0 steps per second.
-                // Any rate higher than this is ignored as a device shake or bump.
-                if (stepsPerSecond > 4.0) {
-                  isJerk = true;
-                  debugPrint('Pedometer Filter: Ignored $diff steps in $seconds seconds ($stepsPerSecond steps/sec) as false positive jerk.');
-                }
-              } else {
-                if (diff > 1) {
-                  isJerk = true;
-                }
-              }
-            }
-
-            if (!isJerk) {
-              _steps += diff;
-            }
-            _lastSensorSteps = event.steps;
-            _lastEventTime = now;
+          // Android hardware sensors batch steps to save power. 
+          // We apply a reasonable sanity check (discarding updates > 500 steps per single update)
+          if (diff > 0 && diff < 500) {
+            _steps += diff;
           }
+          _lastSensorSteps = event.steps;
+          _lastEventTime = now;
         }
         
         notifyListeners();
@@ -274,6 +256,12 @@ class StepProvider extends ChangeNotifier {
       },
       onError: (error) => debugPrint('Pedometer Error: $error'),
     );
+  }
+
+  void debugIncrementSteps(int amount) {
+    _steps += amount;
+    _saveToPrefs();
+    notifyListeners();
   }
 
   Future<void> _fetchWeeklyHistory() async {

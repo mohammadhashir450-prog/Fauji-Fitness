@@ -52,15 +52,19 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
     });
 
     try {
+      // 1. Check if GPS location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         setState(() {
           _currentLocality = null;
           _isLocationLoading = false;
         });
+        if (!mounted) return;
+        _showLocationSettingsDialog(context);
         return;
       }
 
+      // 2. Check location permissions
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -69,6 +73,10 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
             _currentLocality = null;
             _isLocationLoading = false;
           });
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission denied. General recommendations will be shown.')),
+          );
           return;
         }
       }
@@ -78,9 +86,12 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
           _currentLocality = null;
           _isLocationLoading = false;
         });
+        if (!mounted) return;
+        _showAppSettingsDialog(context);
         return;
       }
 
+      // 3. Fetch location
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.low,
@@ -106,10 +117,68 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
     } catch (e) {
       debugPrint('Error getting location: $e');
     } finally {
-      setState(() {
-        _isLocationLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLocationLoading = false;
+        });
+      }
     }
+  }
+
+  void _showLocationSettingsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF121826),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Location Services Disabled', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: const Text(
+          'GPS location services are turned off on your device. Please enable location services to find your city and suggest restaurants.',
+          style: TextStyle(color: Colors.white70, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white30)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await Geolocator.openLocationSettings();
+            },
+            child: const Text('Enable GPS', style: TextStyle(color: Color(0xFFC7F000), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAppSettingsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF121826),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Location Permission Required', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: const Text(
+          'Location permissions are permanently denied. Please open App Settings and allow location permission for Fauji Fitness to use this feature.',
+          style: TextStyle(color: Colors.white70, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white30)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await Geolocator.openAppSettings();
+            },
+            child: const Text('Open Settings', style: TextStyle(color: Color(0xFFC7F000), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -603,6 +672,11 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
 
 
   Widget _buildErrorCard() {
+    final isGeminiDisabled = _errorMessage != null &&
+        (_errorMessage!.contains('generativelanguage') ||
+            _errorMessage!.contains('Gemini API has not been used') ||
+            _errorMessage!.contains('403'));
+
     return Padding(
       padding: const EdgeInsets.only(top: 20),
       child: Card(
@@ -622,15 +696,28 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Scanning Failed',
-                      style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white),
+                    Text(
+                      isGeminiDisabled ? 'Gemini API Needs Activation' : 'Scanning Failed',
+                      style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      _errorMessage ?? 'Unknown error occurred.',
+                      isGeminiDisabled
+                          ? 'Your API key is registered, but the Gemini API is disabled in your Google Cloud Project. Please visit the activation URL to enable it.'
+                          : (_errorMessage ?? 'Unknown error occurred.'),
                       style: const TextStyle(fontSize: 13, color: Colors.white70, height: 1.4),
                     ),
+                    if (isGeminiDisabled) ...[
+                      const SizedBox(height: 12),
+                      const Text(
+                        'How to fix:\n'
+                        '1. Open this URL in your web browser:\n'
+                        'https://console.developers.google.com/apis/api/generativelanguage.googleapis.com/overview?project=22500728689\n'
+                        '2. Tap "ENABLE" and wait 2 minutes.\n'
+                        '3. Re-scan your food!',
+                        style: TextStyle(fontSize: 12, color: Colors.white54, height: 1.5),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -884,39 +971,43 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Row(
-              children: [
-                Icon(
-                  hasLoc ? Icons.location_on : Icons.location_off_outlined,
-                  color: hasLoc ? primary : Colors.white38,
-                  size: 20,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        hasLoc ? 'Target Location' : 'Location Not Shared',
-                        style: TextStyle(
-                          color: hasLoc ? Colors.white70 : Colors.white38,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        hasLoc ? _currentLocality! : 'General suggestions only',
-                        style: TextStyle(
-                          color: hasLoc ? Colors.white : Colors.white54,
-                          fontSize: 13,
-                          fontWeight: hasLoc ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    ],
+            child: GestureDetector(
+              onTap: _fetchCurrentLocation,
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  Icon(
+                    hasLoc ? Icons.location_on : Icons.location_off_outlined,
+                    color: hasLoc ? primary : Colors.white38,
+                    size: 20,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          hasLoc ? 'Target Location' : 'Location Not Shared',
+                          style: TextStyle(
+                            color: hasLoc ? Colors.white70 : Colors.white38,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          hasLoc ? _currentLocality! : 'General suggestions only',
+                          style: TextStyle(
+                            color: hasLoc ? Colors.white : Colors.white54,
+                            fontSize: 13,
+                            fontWeight: hasLoc ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           IconButton(

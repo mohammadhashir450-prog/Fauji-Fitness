@@ -44,15 +44,19 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     });
 
     try {
+      // 1. Check if GPS location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         setState(() {
           _currentLocality = null;
           _isLocationLoading = false;
         });
+        if (!mounted) return;
+        _showLocationSettingsDialog(context);
         return;
       }
 
+      // 2. Check location permissions
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -61,6 +65,10 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             _currentLocality = null;
             _isLocationLoading = false;
           });
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission denied. Tap to retry.')),
+          );
           return;
         }
       }
@@ -70,9 +78,12 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           _currentLocality = null;
           _isLocationLoading = false;
         });
+        if (!mounted) return;
+        _showAppSettingsDialog(context);
         return;
       }
 
+      // 3. Fetch location
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.low,
@@ -98,10 +109,68 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     } catch (e) {
       debugPrint('Error getting location: $e');
     } finally {
-      setState(() {
-        _isLocationLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLocationLoading = false;
+        });
+      }
     }
+  }
+
+  void _showLocationSettingsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF121826),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Location Services Disabled', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: const Text(
+          'GPS location services are turned off on your device. Please enable location services to find your city and suggest restaurants.',
+          style: TextStyle(color: Colors.white70, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white30)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await Geolocator.openLocationSettings();
+            },
+            child: const Text('Enable GPS', style: TextStyle(color: Color(0xFFC7F000), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAppSettingsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF121826),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Location Permission Required', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: const Text(
+          'Location permissions are permanently denied. Please open App Settings and allow location permission for Fauji Fitness to use this feature.',
+          style: TextStyle(color: Colors.white70, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white30)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await Geolocator.openAppSettings();
+            },
+            child: const Text('Open Settings', style: TextStyle(color: Color(0xFFC7F000), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTextStat(String value, String title) {
@@ -338,33 +407,41 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                           ],
                         )
                       else if (_currentLocality != null && _currentLocality!.isNotEmpty)
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on, color: neonGreen, size: 14),
-                            const SizedBox(width: 4),
-                            Text(
-                              _currentLocality!,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: neonGreen,
-                                fontWeight: FontWeight.bold,
+                        GestureDetector(
+                          onTap: _fetchCurrentLocation,
+                          behavior: HitTestBehavior.opaque,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.location_on, color: neonGreen, size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                _currentLocality!,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: neonGreen,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         )
                       else
-                        Row(
-                          children: [
-                            const Icon(Icons.location_off_outlined, color: Colors.white30, size: 14),
-                            const SizedBox(width: 4),
-                            const Text(
-                              'Location not shared',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white30,
+                        GestureDetector(
+                          onTap: _fetchCurrentLocation,
+                          behavior: HitTestBehavior.opaque,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.location_off_outlined, color: Colors.white30, size: 14),
+                              const SizedBox(width: 4),
+                              const Text(
+                                'Location not shared',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white30,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                     ],
                   ),
@@ -402,8 +479,14 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                 child: Column(
                   children: [
                     Center(
-                      child: Stack(
-                        alignment: Alignment.center,
+                      child: GestureDetector(
+                        onTap: () {
+                          // Allow manual step increment during testing
+                          stepData.debugIncrementSteps(500);
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: Stack(
+                          alignment: Alignment.center,
                         children: [
                           // Heart Points Ring (Outer)
                           SizedBox(
@@ -470,6 +553,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                         ],
                       ),
                     ),
+                  ),
                     const SizedBox(height: 36),
 
                     Row(

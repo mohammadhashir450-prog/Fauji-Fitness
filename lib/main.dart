@@ -105,7 +105,21 @@ void main() async {
   
   // Initialize Firebase
   try {
-    await Firebase.initializeApp();
+    final prefs = await SharedPreferences.getInstance();
+    final customApiKey = prefs.getString('firebase_api_key') ?? prefs.getString('gemini_api_key');
+    if (customApiKey != null && customApiKey.isNotEmpty) {
+      await Firebase.initializeApp(
+        options: FirebaseOptions(
+          apiKey: customApiKey,
+          appId: "1:123456789012:android:abcdef1234567890",
+          messagingSenderId: "123456789012",
+          projectId: "mock-fauji-fitness",
+          storageBucket: "mock-fauji-fitness.appspot.com",
+        ),
+      );
+    } else {
+      await Firebase.initializeApp();
+    }
   } catch (e) {
     debugPrint("Firebase initialization failed: $e");
   }
@@ -379,7 +393,10 @@ class _GlobalFitnessDrawer extends StatelessWidget {
             _drawerItem(Icons.person, 'Profile', () => onNavigate(4)),
             const Spacer(),
             _drawerItem(Icons.logout, 'Logout', () async {
-              await context.read<AuthService>().signOut();
+              final authService = context.read<AuthService>();
+              final userProvider = context.read<UserProvider>();
+              await authService.signOut();
+              await userProvider.logout();
               if (context.mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const SplashScreen()),

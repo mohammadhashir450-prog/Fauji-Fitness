@@ -98,4 +98,10 @@ class UserProvider extends ChangeNotifier {
 
     notifyListeners();
   }
+
+  Future<void> logout() async {
+    _user = null;
+    await _storage.clearAll();
+    notifyListeners();
+  }
 }

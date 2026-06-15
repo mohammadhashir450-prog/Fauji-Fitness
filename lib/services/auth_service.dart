@@ -1,12 +1,38 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  Future<void> saveApiKeyAndReinit(String apiKey) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('firebase_api_key', apiKey);
+      await prefs.setString('gemini_api_key', apiKey);
+      
+      try {
+        await Firebase.app().delete();
+      } catch (_) {}
+      
+      await Firebase.initializeApp(
+        options: FirebaseOptions(
+          apiKey: apiKey,
+          appId: "1:123456789012:android:abcdef1234567890",
+          messagingSenderId: "123456789012",
+          projectId: "mock-fauji-fitness",
+          storageBucket: "mock-fauji-fitness.appspot.com",
+        ),
+      );
+    } catch (e) {
+      debugPrint("Firebase reinitialization failed: $e");
+    }
+  }
 
   // Stream of auth changes
   Stream<User?> get userStream => _auth.authStateChanges();

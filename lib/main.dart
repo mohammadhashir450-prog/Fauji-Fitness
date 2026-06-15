@@ -106,6 +106,15 @@ void main() async {
   // Initialize Firebase
   try {
     final prefs = await SharedPreferences.getInstance();
+    
+    // Seed the user's provided API key if no key is currently stored
+    if (prefs.getString('gemini_api_key') == null) {
+      await prefs.setString('gemini_api_key', 'AIzaSyBffxYEvQx99C3wo-FWUx4_-B3M-f_p7Uc');
+    }
+    if (prefs.getString('firebase_api_key') == null) {
+      await prefs.setString('firebase_api_key', 'AIzaSyBffxYEvQx99C3wo-FWUx4_-B3M-f_p7Uc');
+    }
+
     final customApiKey = prefs.getString('firebase_api_key') ?? prefs.getString('gemini_api_key');
     if (customApiKey != null && customApiKey.isNotEmpty) {
       await Firebase.initializeApp(

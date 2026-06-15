@@ -14,7 +14,91 @@ import 'screens/weight_tracker_screen.dart';
 import 'screens/community_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/food_detector_screen.dart';
+import 'dart:convert';
+import 'package:workmanager/workmanager.dart';
+import 'package:health/health.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'models/user.dart';
+
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    WidgetsFlutterBinding.ensureInitialized();
+    try {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      
+      final health = Health();
+      try {
+        await health.configure();
+      } catch (_) {}
+      
+      final hasPermissions = await health.hasPermissions([HealthDataType.STEPS]);
+      if (hasPermissions == true) {
+        final steps = await health.getTotalStepsInInterval(today, now);
+        if (steps != null && steps > 0) {
+          final prefs = await SharedPreferences.getInstance();
+          final todayStr = now.toIso8601String().split('T')[0];
+          
+          final savedDateStr = prefs.getString('step_tracker_date');
+          int currentSteps = 0;
+          if (savedDateStr == todayStr) {
+            currentSteps = prefs.getInt('step_tracker_steps') ?? 0;
+          }
+          
+          if (steps > currentSteps) {
+            await prefs.setString('step_tracker_date', todayStr);
+            await prefs.setInt('step_tracker_steps', steps);
+            
+            final historyJson = prefs.getString('step_tracker_history');
+            Map<String, dynamic> history = {};
+            if (historyJson != null) {
+              try {
+                history = jsonDecode(historyJson) as Map<String, dynamic>;
+              } catch (_) {}
+            }
+            history[todayStr] = steps;
+            
+            if (history.length > 10) {
+              final sortedKeys = history.keys.toList()..sort();
+              while (history.length > 10) {
+                history.remove(sortedKeys.removeAt(0));
+              }
+            }
+            await prefs.setString('step_tracker_history', jsonEncode(history));
+            
+            try {
+              if (Firebase.apps.isEmpty) {
+                await Firebase.initializeApp();
+              }
+              final user = FirebaseAuth.instance.currentUser;
+              if (user != null) {
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user.uid)
+                    .collection('activity')
+                    .doc(todayStr)
+                    .set({
+                  'steps': steps,
+                  'calories': (steps * 0.045).round(),
+                  'heartPoints': (steps / 150).floor(),
+                  'updatedAt': FieldValue.serverTimestamp(),
+                }, SetOptions(merge: true));
+              }
+            } catch (fe) {
+              debugPrint('Background Firebase Sync Error: $fe');
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Background Workmanager Sync Error: $e');
+    }
+    return Future.value(true);
+  });
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +107,23 @@ void main() async {
   try {
     await Firebase.initializeApp();
   } catch (e) {
-    debugPrint("Firebase initialization failed: \$e");
+    debugPrint("Firebase initialization failed: $e");
+  }
+
+  // Initialize Workmanager background sync
+  try {
+    await Workmanager().initialize(
+      callbackDispatcher,
+      isInDebugMode: false,
+    );
+    await Workmanager().registerPeriodicTask(
+      "step_sync_task",
+      "syncStepsTask",
+      frequency: const Duration(minutes: 15),
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+    );
+  } catch (e) {
+    debugPrint("Workmanager initialization failed: $e");
   }
 
   runApp(const MyApp());

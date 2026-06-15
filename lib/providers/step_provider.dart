@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -62,7 +63,7 @@ class StepProvider extends ChangeNotifier {
 
   Future<void> _loadTodaySnapshot() async {
     final now = DateTime.now();
-    _ensureDay(now);
+    await _ensureDay(now);
     await syncStepsWithSystem();
   }
 
@@ -80,11 +81,20 @@ class StepProvider extends ChangeNotifier {
         if (savedDay != null) {
           _currentDay = DateTime.parse(savedDay);
         }
+        final savedEventTime = prefs.getString('step_tracker_last_event_time');
+        if (savedEventTime != null) {
+          _lastEventTime = DateTime.parse(savedEventTime);
+        }
       } else {
+        if (savedDateStr != null) {
+          final savedSteps = prefs.getInt('step_tracker_steps') ?? 0;
+          await _archiveDaySteps(savedDateStr, savedSteps);
+        }
         _steps = 0;
         _lastSensorSteps = 0;
         _heartRate = 0;
         _currentDay = DateTime.now();
+        _lastEventTime = null;
         await _saveToPrefs();
       }
       notifyListeners();
@@ -104,27 +114,67 @@ class StepProvider extends ChangeNotifier {
       if (_currentDay != null) {
         await prefs.setString('step_tracker_current_day', _currentDay!.toIso8601String());
       }
+      if (_lastEventTime != null) {
+        await prefs.setString('step_tracker_last_event_time', _lastEventTime!.toIso8601String());
+      } else {
+        await prefs.remove('step_tracker_last_event_time');
+      }
     } catch (e) {
       debugPrint('Error saving to prefs: $e');
     }
   }
 
-  void _ensureDay(DateTime now) {
+  Future<void> _archiveDaySteps(String dateStr, int steps) async {
+    if (steps <= 0) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final historyJson = prefs.getString('step_tracker_history');
+      Map<String, dynamic> history = {};
+      if (historyJson != null) {
+        try {
+          history = jsonDecode(historyJson) as Map<String, dynamic>;
+        } catch (_) {}
+      }
+      final existing = history[dateStr] ?? 0;
+      if (steps > existing) {
+        history[dateStr] = steps;
+        if (history.length > 30) {
+          final sortedKeys = history.keys.toList()..sort();
+          while (history.length > 30) {
+            history.remove(sortedKeys.removeAt(0));
+          }
+        }
+        await prefs.setString('step_tracker_history', jsonEncode(history));
+      }
+    } catch (e) {
+      debugPrint('Error archiving steps: $e');
+    }
+  }
+
+  Future<void> _ensureDay(DateTime now) async {
     final current = DateTime(now.year, now.month, now.day);
-    if (_currentDay == null || _currentDay != current) {
+    if (_currentDay == null) {
+      _currentDay = current;
+      await _saveToPrefs();
+    } else if (_currentDay != current) {
+      // Archive previous day's steps
+      final prevDayStr = _currentDay!.toIso8601String().split('T')[0];
+      await _archiveDaySteps(prevDayStr, _steps);
+
+      // Reset for the new day
       _currentDay = current;
       _steps = 0;
       _lastSensorSteps = 0;
       _heartRate = 0;
       _weeklySteps = List.filled(7, 0);
-      _saveToPrefs();
+      await _saveToPrefs();
       notifyListeners();
     }
   }
 
   Future<void> syncStepsWithSystem() async {
     final now = DateTime.now();
-    _ensureDay(now);
+    await _ensureDay(now);
 
     final today = DateTime(now.year, now.month, now.day);
     int newSteps = _steps;
@@ -180,8 +230,8 @@ class StepProvider extends ChangeNotifier {
   void _startPedometerFallback() {
     _pedometerSubscription?.cancel();
     _pedometerSubscription = Pedometer.stepCountStream.listen(
-      (event) {
-        _ensureDay(DateTime.now());
+      (event) async {
+        await _ensureDay(DateTime.now());
         final now = DateTime.now();
         final seconds = _lastEventTime == null ? 0.0 : now.difference(_lastEventTime!).inMilliseconds / 1000.0;
         
@@ -195,17 +245,19 @@ class StepProvider extends ChangeNotifier {
           final diff = event.steps - _lastSensorSteps;
           if (diff > 0) {
             bool isJerk = false;
-            if (seconds > 0.1) {
-              final stepsPerSecond = diff / seconds;
-              // Normal walking/running cannot physically exceed 4.0 steps per second.
-              // Any rate higher than this is ignored as a device shake or bump.
-              if (stepsPerSecond > 4.0) {
-                isJerk = true;
-                debugPrint('Pedometer Filter: Ignored $diff steps in $seconds seconds ($stepsPerSecond steps/sec) as false positive jerk.');
-              }
-            } else {
-              if (diff > 1) {
-                isJerk = true;
+            if (_lastEventTime != null) {
+              if (seconds > 0.1) {
+                final stepsPerSecond = diff / seconds;
+                // Normal walking/running cannot physically exceed 4.0 steps per second.
+                // Any rate higher than this is ignored as a device shake or bump.
+                if (stepsPerSecond > 4.0) {
+                  isJerk = true;
+                  debugPrint('Pedometer Filter: Ignored $diff steps in $seconds seconds ($stepsPerSecond steps/sec) as false positive jerk.');
+                }
+              } else {
+                if (diff > 1) {
+                  isJerk = true;
+                }
               }
             }
 
@@ -218,7 +270,7 @@ class StepProvider extends ChangeNotifier {
         }
         
         notifyListeners();
-        _saveToPrefs();
+        await _saveToPrefs();
       },
       onError: (error) => debugPrint('Pedometer Error: $error'),
     );
@@ -227,14 +279,48 @@ class StepProvider extends ChangeNotifier {
   Future<void> _fetchWeeklyHistory() async {
     final temp = <int>[];
     final now = DateTime.now();
+    
+    // Load local history
+    Map<String, dynamic> history = {};
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final historyJson = prefs.getString('step_tracker_history');
+      if (historyJson != null) {
+        history = jsonDecode(historyJson) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      debugPrint('Error loading history for weekly sync: $e');
+    }
+
     for (int i = 6; i >= 0; i--) {
-      final start = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
-      final end = i == 0 ? now : start.add(const Duration(days: 1)).subtract(const Duration(milliseconds: 1));
-      try {
-        final steps = await _health.getTotalStepsInInterval(start, end);
-        temp.add(steps ?? 0);
-      } catch (_) {
-        temp.add(0);
+      final day = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
+      final dateStr = day.toIso8601String().split('T')[0];
+      
+      int localSteps = 0;
+      if (history.containsKey(dateStr)) {
+        localSteps = int.tryParse(history[dateStr].toString()) ?? 0;
+      }
+      
+      int healthSteps = 0;
+      if (i == 0) {
+        // Today
+        final start = DateTime(now.year, now.month, now.day);
+        try {
+          final steps = await _health.getTotalStepsInInterval(start, now);
+          healthSteps = steps ?? 0;
+        } catch (_) {}
+        
+        final finalSteps = healthSteps > _steps ? healthSteps : _steps;
+        temp.add(finalSteps > localSteps ? finalSteps : localSteps);
+      } else {
+        final start = day;
+        final end = day.add(const Duration(days: 1)).subtract(const Duration(milliseconds: 1));
+        try {
+          final steps = await _health.getTotalStepsInInterval(start, end);
+          healthSteps = steps ?? 0;
+        } catch (_) {}
+        
+        temp.add(healthSteps > localSteps ? healthSteps : localSteps);
       }
     }
     _weeklySteps = temp;

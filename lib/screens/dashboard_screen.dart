@@ -241,43 +241,59 @@ class DashboardScreen extends StatelessWidget {
 
       DateTime d = now.subtract(Duration(days: 6 - i));
       String dayLetter = ['M', 'T', 'W', 'T', 'F', 'S', 'S'][d.weekday - 1];
+      final dateStr = "${d.day}/${d.month}/${d.year}";
+      final dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][d.weekday - 1];
 
       ringWidgets.add(
-        Column(
-          children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  height: 30, width: 30,
-                  child: CircularProgressIndicator(
-                    value: stepProg > 1.0 ? 1.0 : stepProg,
-                    strokeWidth: 3.5,
-                    color: neonGreen,
-                    backgroundColor: Colors.white10,
+        Tooltip(
+          message: '$dayName ($dateStr)\nSteps: $steps\nHeart Points: $heartPts',
+          triggerMode: TooltipTriggerMode.tap,
+          preferBelow: false,
+          child: Column(
+            children: [
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    height: 30, width: 30,
+                    child: CircularProgressIndicator(
+                      value: stepProg > 1.0 ? 1.0 : stepProg,
+                      strokeWidth: 3.5,
+                      color: neonGreen,
+                      backgroundColor: Colors.white10,
+                    ),
                   ),
-                ),
-                SizedBox(
-                  height: 18, width: 18,
-                  child: CircularProgressIndicator(
-                    value: heartProg > 1.0 ? 1.0 : heartProg,
-                    strokeWidth: 3.5,
-                    color: Colors.redAccent,
-                    backgroundColor: Colors.white10,
+                  SizedBox(
+                    height: 18, width: 18,
+                    child: CircularProgressIndicator(
+                      value: heartProg > 1.0 ? 1.0 : heartProg,
+                      strokeWidth: 3.5,
+                      color: Colors.redAccent,
+                      backgroundColor: Colors.white10,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              dayLetter,
-              style: TextStyle(
-                color: i == 6 ? neonGreen : Colors.white54,
-                fontSize: 12,
-                fontWeight: i == 6 ? FontWeight.w900 : FontWeight.w600,
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
+              Text(
+                dayLetter,
+                style: TextStyle(
+                  color: i == 6 ? neonGreen : Colors.white54,
+                  fontSize: 12,
+                  fontWeight: i == 6 ? FontWeight.w900 : FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${d.day}',
+                style: TextStyle(
+                  color: i == 6 ? neonGreen.withValues(alpha: 0.8) : Colors.white30,
+                  fontSize: 9,
+                  fontWeight: i == 6 ? FontWeight.w900 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }

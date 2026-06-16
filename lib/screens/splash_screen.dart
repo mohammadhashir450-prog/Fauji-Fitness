@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:health/health.dart';
 
 import '../providers/user_provider.dart'; // Apna sahi path check kar lijiye ga
 import '../main.dart'; // AppShell ko access karne ke liye
@@ -17,13 +19,45 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    final Future<void> delayFuture = Future.delayed(const Duration(seconds: 2));
+    final Future<void> permissionFuture = _requestPermissions();
+
+    // Wait for both the delay and permissions to resolve
+    await Future.wait([delayFuture, permissionFuture]);
+
     _checkLoginStatus();
   }
 
-  Future<void> _checkLoginStatus() async {
-    // 2 second ka delay taake user ko aapka zabardast UI nazar aaye
-    await Future.delayed(const Duration(seconds: 2));
+  Future<void> _requestPermissions() async {
+    try {
+      // 1. Request Location, Activity Recognition, and Body Sensors permissions
+      await [
+        Permission.locationWhenInUse,
+        Permission.activityRecognition,
+        Permission.sensors,
+      ].request();
+    } catch (e) {
+      debugPrint('General permissions request failed: $e');
+    }
 
+    try {
+      // 2. Request Health Connect authorization
+      final health = Health();
+      await health.configure();
+      await health.requestAuthorization([
+        HealthDataType.STEPS,
+        HealthDataType.HEART_RATE,
+      ]);
+    } catch (e) {
+      debugPrint('Health Connect authorization failed: $e');
+    }
+  }
+
+  Future<void> _checkLoginStatus() async {
     if (!mounted) return;
 
     // UserProvider se data read karein

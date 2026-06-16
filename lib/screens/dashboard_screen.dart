@@ -83,27 +83,49 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
         return;
       }
 
-      // 3. Fetch location
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.low,
-          timeLimit: Duration(seconds: 5),
-        ),
-      );
+      // 3. Fetch location with fallback
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 5),
+          ),
+        );
+      } catch (e) {
+        debugPrint('DashboardScreen: getCurrentPosition with high accuracy failed: $e. Trying low accuracy...');
+        try {
+          position = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.low,
+              timeLimit: Duration(seconds: 3),
+            ),
+          );
+        } catch (e2) {
+          debugPrint('DashboardScreen: getCurrentPosition with low accuracy failed: $e2. Trying getLastKnownPosition...');
+          position = await Geolocator.getLastKnownPosition();
+        }
+      }
 
-      final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-      if (placemarks.isNotEmpty) {
-        final placemark = placemarks.first;
-        final city = placemark.locality ?? placemark.subAdministrativeArea ?? placemark.administrativeArea ?? '';
-        final stateName = placemark.administrativeArea ?? '';
+      if (position != null) {
+        final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+        if (placemarks.isNotEmpty) {
+          final placemark = placemarks.first;
+          final city = placemark.locality ?? placemark.subAdministrativeArea ?? placemark.administrativeArea ?? '';
+          final stateName = placemark.administrativeArea ?? '';
+          setState(() {
+            if (city.isNotEmpty && stateName.isNotEmpty) {
+              _currentLocality = "$city, $stateName";
+            } else if (city.isNotEmpty) {
+              _currentLocality = city;
+            } else {
+              _currentLocality = stateName;
+            }
+          });
+        }
+      } else {
         setState(() {
-          if (city.isNotEmpty && stateName.isNotEmpty) {
-            _currentLocality = "$city, $stateName";
-          } else if (city.isNotEmpty) {
-            _currentLocality = city;
-          } else {
-            _currentLocality = stateName;
-          }
+          _currentLocality = null;
         });
       }
     } catch (e) {

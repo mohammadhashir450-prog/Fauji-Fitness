@@ -91,27 +91,49 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
         return;
       }
 
-      // 3. Fetch location
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.low,
-          timeLimit: Duration(seconds: 5),
-        ),
-      );
+      // 3. Fetch location with fallback
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 5),
+          ),
+        );
+      } catch (e) {
+        debugPrint('FoodDetectorScreen: getCurrentPosition with high accuracy failed: $e. Trying low accuracy...');
+        try {
+          position = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.low,
+              timeLimit: Duration(seconds: 3),
+            ),
+          );
+        } catch (e2) {
+          debugPrint('FoodDetectorScreen: getCurrentPosition with low accuracy failed: $e2. Trying getLastKnownPosition...');
+          position = await Geolocator.getLastKnownPosition();
+        }
+      }
 
-      final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-      if (placemarks.isNotEmpty) {
-        final placemark = placemarks.first;
-        final city = placemark.locality ?? placemark.subAdministrativeArea ?? placemark.administrativeArea ?? '';
-        final state = placemark.administrativeArea ?? '';
+      if (position != null) {
+        final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+        if (placemarks.isNotEmpty) {
+          final placemark = placemarks.first;
+          final city = placemark.locality ?? placemark.subAdministrativeArea ?? placemark.administrativeArea ?? '';
+          final state = placemark.administrativeArea ?? '';
+          setState(() {
+            if (city.isNotEmpty && state.isNotEmpty) {
+              _currentLocality = "$city, $state";
+            } else if (city.isNotEmpty) {
+              _currentLocality = city;
+            } else {
+              _currentLocality = state;
+            }
+          });
+        }
+      } else {
         setState(() {
-          if (city.isNotEmpty && state.isNotEmpty) {
-            _currentLocality = "$city, $state";
-          } else if (city.isNotEmpty) {
-            _currentLocality = city;
-          } else {
-            _currentLocality = state;
-          }
+          _currentLocality = null;
         });
       }
     } catch (e) {

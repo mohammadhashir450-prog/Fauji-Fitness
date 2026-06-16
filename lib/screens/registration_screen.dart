@@ -87,7 +87,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       if (!mounted) return;
       final errorStr = e.toString();
       if (errorStr.contains('API key') || errorStr.contains('firebase_auth/unknown')) {
-        _showApiKeyErrorDialog(context, errorStr);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Firebase API Key invalid. Registering you in Local Mode...')),
+        );
+        _proceedLocalMode();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Registration failed: ${e.toString()}')),
@@ -659,65 +662,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     );
   }
 
-  void _showApiKeyErrorDialog(BuildContext context, String errorMessage) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF121826),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            children: const [
-              Icon(Icons.warning_amber_rounded, color: Colors.orangeAccent, size: 28),
-              SizedBox(width: 10),
-              Text(
-                'Invalid API Key Config',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'The default Firebase API key is mock or invalid. You can enter a valid Firebase API key or bypass this error using Local Mode.',
-                style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Error: $errorMessage',
-                style: const TextStyle(color: Colors.redAccent, fontSize: 11, fontStyle: FontStyle.italic),
-              ),
-            ],
-          ),
-          actionsAlignment: MainAxisAlignment.spaceBetween,
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _promptFirebaseApiKey(context);
-              },
-              child: const Text('Configure Key', style: TextStyle(color: Color(0xFFC7F000), fontWeight: FontWeight.bold)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _proceedLocalMode();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFC7F000),
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: const Text('Local Mode', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
-        );
-      },
-    );
-  }
+
 
   Future<void> _proceedLocalMode() async {
     if (!_formKey.currentState!.validate()) return;

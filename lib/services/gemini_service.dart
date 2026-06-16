@@ -215,6 +215,42 @@ class GeminiService {
       closeHour: 23,
       specialty: 'Organic Chicken Salad',
     ),
+    _MockRestaurant(
+      name: 'Dera Restaurant Clifton',
+      address: 'Boat Basin, Clifton, Karachi',
+      city: 'Karachi',
+      tags: ['desi', 'karahi', 'roti', 'chicken', 'beef'],
+      openHour: 17,
+      closeHour: 3,
+      specialty: 'Daal Makhani & Handi',
+    ),
+    _MockRestaurant(
+      name: 'Lal Qila Restaurant',
+      address: 'Main Shahrah-e-Faisal, Karachi',
+      city: 'Karachi',
+      tags: ['desi', 'bbq', 'kebab', 'chicken', 'beef'],
+      openHour: 19,
+      closeHour: 23,
+      specialty: 'Mughlai Buffet & Daal/BBQ',
+    ),
+    _MockRestaurant(
+      name: 'Fresco Sweets Burns Road',
+      address: 'Burns Road, Karachi',
+      city: 'Karachi',
+      tags: ['dessert', 'sweet', 'desi'],
+      openHour: 6,
+      closeHour: 0,
+      specialty: 'Dahi Baray & Samosa / Halwa',
+    ),
+    _MockRestaurant(
+      name: 'Ginsoy Clifton',
+      address: 'Clifton Block 4, Karachi',
+      city: 'Karachi',
+      tags: ['chinese', 'soup', 'chicken', 'beef'],
+      openHour: 12,
+      closeHour: 0,
+      specialty: 'Chicken Manchurian & Egg Fried Rice',
+    ),
 
     // Lahore
     _MockRestaurant(
@@ -239,7 +275,7 @@ class GeminiService {
       name: 'Butt Karahi Lakshmi Chowk',
       address: 'Lakshmi Chowk, Lahore',
       city: 'Lahore',
-      tags: ['karahi', 'chicken', 'beef', 'mutton'],
+      tags: ['karahi', 'chicken', 'beef', 'mutton', 'desi'],
       openHour: 12,
       closeHour: 3,
       specialty: 'Butter Chicken Karahi',
@@ -248,7 +284,7 @@ class GeminiService {
       name: 'Phajja Siri Paye Fort',
       address: 'Near Badshahi Mosque, Walled City, Lahore',
       city: 'Lahore',
-      tags: ['paye', 'mutton', 'beef'],
+      tags: ['paye', 'mutton', 'beef', 'desi'],
       openHour: 0,
       closeHour: 24,
       specialty: 'Siri Paye',
@@ -314,7 +350,34 @@ class GeminiService {
       tags: ['fast food', 'pizza', 'dessert'],
       openHour: 12,
       closeHour: 1,
-      specialty: 'Deep Dish Pizza',
+      specialty: 'Deep Dish Pizza / Fudge Cake',
+    ),
+    _MockRestaurant(
+      name: 'Dera Restaurant Lahore',
+      address: 'Main Boulevard, Gaddafi Stadium, Lahore',
+      city: 'Lahore',
+      tags: ['desi', 'karahi', 'roti', 'chicken', 'beef'],
+      openHour: 17,
+      closeHour: 3,
+      specialty: 'Daal Makhani & Mutton Handi',
+    ),
+    _MockRestaurant(
+      name: 'Chaman Ice Cream Beadon Rd',
+      address: 'Beadon Road, Mall Road, Lahore',
+      city: 'Lahore',
+      tags: ['dessert', 'sweet', 'desi'],
+      openHour: 11,
+      closeHour: 1,
+      specialty: 'Pista Ice Cream & Falooda',
+    ),
+    _MockRestaurant(
+      name: 'Ginsoy Gulberg',
+      address: 'Mini Market, Gulberg, Lahore',
+      city: 'Lahore',
+      tags: ['chinese', 'soup', 'chicken', 'beef'],
+      openHour: 12,
+      closeHour: 0,
+      specialty: 'Chicken Manchurian & Egg Fried Rice',
     ),
 
     // Islamabad / Rawalpindi
@@ -349,7 +412,7 @@ class GeminiService {
       name: 'Monal Restaurant Margalla Hills',
       address: 'Pir Sohawa, Margalla Hills, Islamabad',
       city: 'Islamabad',
-      tags: ['kebab', 'beef', 'chicken', 'bbq', 'karahi', 'fast food'],
+      tags: ['kebab', 'beef', 'chicken', 'bbq', 'karahi', 'fast food', 'desi'],
       openHour: 9,
       closeHour: 0,
       specialty: 'Chicken Makhani Handi',
@@ -358,7 +421,7 @@ class GeminiService {
       name: 'Tandoori Restaurant G-8',
       address: 'G-8 Markaz, Islamabad',
       city: 'Islamabad',
-      tags: ['karahi', 'chicken', 'bbq'],
+      tags: ['karahi', 'chicken', 'bbq', 'desi'],
       openHour: 12,
       closeHour: 23,
       specialty: 'Chicken Karahi',
@@ -408,13 +471,22 @@ class GeminiService {
       closeHour: 22,
       specialty: 'Grilled Chicken Caesar Salad',
     ),
+    _MockRestaurant(
+      name: 'Kitchen Cuisine F-7',
+      address: 'F-7 Markaz, Islamabad',
+      city: 'Islamabad',
+      tags: ['dessert', 'sweet', 'desi'],
+      openHour: 8,
+      closeHour: 23,
+      specialty: 'Chocolate Fudge Cake & Cookies',
+    ),
 
     // Nationwide / Generic Fallback
     _MockRestaurant(
       name: 'KFC Drive-Thru',
       address: 'Main Commercial Hub, Nearby Branch',
       city: '',
-      tags: ['burger', 'fast food', 'chicken'],
+      tags: ['burger', 'fast food', 'chicken', 'sandwich'],
       openHour: 11,
       closeHour: 3,
       specialty: 'Zinger Burger',
@@ -450,7 +522,7 @@ class GeminiService {
       name: 'Subway Healthy Subs',
       address: 'Market Square, Nearby Branch',
       city: '',
-      tags: ['salad', 'healthy', 'fast food'],
+      tags: ['salad', 'healthy', 'fast food', 'sandwich'],
       openHour: 8,
       closeHour: 23,
       specialty: 'Roasted Chicken Breast Sub / Salad',
@@ -482,28 +554,41 @@ class GeminiService {
   static List<String> getTagsForFood(String foodName) {
     final name = foodName.toLowerCase();
     List<String> tags = [];
-    if (name.contains('biryani') || name.contains('pulao') || name.contains('rice')) {
+    if (name.contains('biryani') || name.contains('pulao') || name.contains('rice') || name.contains('chawal')) {
       tags.add('rice');
       tags.add('biryani');
     }
-    if (name.contains('kebab') || name.contains('kabab') || name.contains('tikka') || name.contains('bbq') || name.contains('boti') || name.contains('charcoal')) {
+    if (name.contains('kebab') || name.contains('kabab') || name.contains('tikka') || name.contains('bbq') || name.contains('boti') || name.contains('charcoal') || name.contains('grill') || name.contains('sajji')) {
       tags.add('kebab');
       tags.add('bbq');
     }
-    if (name.contains('burger') || name.contains('zinger') || name.contains('sandwich')) {
+    if (name.contains('burger') || name.contains('zinger') || name.contains('patty') || name.contains('bun')) {
       tags.add('burger');
       tags.add('fast food');
     }
-    if (name.contains('pizza') || name.contains('slice')) {
+    if (name.contains('pizza') || name.contains('slice') || name.contains('calzone')) {
       tags.add('pizza');
       tags.add('fast food');
     }
-    if (name.contains('salad') || name.contains('avocado') || name.contains('healthy') || name.contains('diet') || name.contains('keto') || name.contains('protein bowl') || name.contains('greens')) {
+    if (name.contains('salad') || name.contains('avocado') || name.contains('healthy') || name.contains('diet') || name.contains('keto') || name.contains('protein bowl') || name.contains('greens') || name.contains('organic')) {
       tags.add('salad');
       tags.add('healthy');
     }
-    if (name.contains('karahi') || name.contains('handi') || name.contains('nihari') || name.contains('paye') || name.contains('korma') || name.contains('makhani')) {
+    if (name.contains('karahi') || name.contains('handi') || name.contains('nihari') || name.contains('paye') || name.contains('korma') || name.contains('makhani') || name.contains('haleem') || name.contains('gravy') || name.contains('siri')) {
       tags.add('karahi');
+    }
+    if (name.contains('sandwich') || name.contains('sub') || name.contains('wrap') || name.contains('shawarma') || name.contains('roll')) {
+      tags.add('sandwich');
+      tags.add('fast food');
+    }
+    if (name.contains('chinese') || name.contains('noodle') || name.contains('chow mein') || name.contains('soup') || name.contains('manchurian')) {
+      tags.add('chinese');
+    }
+    if (name.contains('sweet') || name.contains('cake') || name.contains('ice cream') || name.contains('dessert') || name.contains('halwa') || name.contains('kheer') || name.contains('custard')) {
+      tags.add('dessert');
+    }
+    if (name.contains('daal') || name.contains('roti') || name.contains('naan') || name.contains('sabzi') || name.contains('paneer') || name.contains('chana') || name.contains('desi') || name.contains('paratha')) {
+      tags.add('desi');
     }
     if (name.contains('chicken')) {
       tags.add('chicken');
@@ -531,35 +616,28 @@ class GeminiService {
       matchingRestaurants = _mockRestaurants.where((r) => r.city.toLowerCase() == city.toLowerCase()).toList();
     }
 
-    // Filter the city list by tags
+    // Filter by tags
     List<_MockRestaurant> tagMatches = [];
     if (foodTags.isNotEmpty) {
+      // First try to find matches in the specific city
       tagMatches = matchingRestaurants.where((r) {
         return r.tags.any((tag) => foodTags.contains(tag));
       }).toList();
-    }
 
-    // If we have no city tag matches, search the generic/nationwide ones for tags
-    if (tagMatches.isEmpty && foodTags.isNotEmpty) {
-      tagMatches = _mockRestaurants
-          .where((r) => r.city.isEmpty && r.tags.any((tag) => foodTags.contains(tag)))
-          .toList();
-    }
-
-    // If still empty, grab any restaurant in the city, or general nationwide ones
-    if (tagMatches.isEmpty) {
-      tagMatches = matchingRestaurants.isNotEmpty
-          ? matchingRestaurants
-          : _mockRestaurants.where((r) => r.city.isEmpty).toList();
+      // If no city matches, fallback to generic/nationwide ones matching the tags
+      if (tagMatches.isEmpty) {
+        tagMatches = _mockRestaurants
+            .where((r) => r.city.isEmpty && r.tags.any((tag) => foodTags.contains(tag)))
+            .toList();
+      }
     }
 
     // Filter for open restaurants ONLY
     final openRestaurants = tagMatches.where((r) => r.isOpenAt(currentHour)).toList();
 
-    // If somehow all are closed (e.g. at 4 AM), ignore the open restriction so we don't return an empty list
+    // If all matched restaurants are closed, fallback to showing them as closed or keep the list
     final finalSelection = openRestaurants.isNotEmpty ? openRestaurants : tagMatches;
 
-    // Return as many as possible
     return finalSelection.map((r) {
       return RestaurantSpot(
         name: r.name,
@@ -599,6 +677,56 @@ class GeminiService {
         fat: 20.0,
         carbs: 45.0,
         description: 'Minced beef skewers seasoned with traditional Pakistani spices, grilled over charcoal. Good protein source, accompanied by refined flatbread.',
+        restaurants: [],
+      ),
+      FoodScanResult(
+        foodName: 'Zinger Burger with Fries',
+        isFood: true,
+        calories: 650,
+        protein: 28.0,
+        fat: 32.0,
+        carbs: 55.0,
+        description: 'Crispy fried chicken thigh fillet topped with lettuce and mayonnaise in a sesame seed bun. A high-calorie fast food option.',
+        restaurants: [],
+      ),
+      FoodScanResult(
+        foodName: 'Pepperoni Pizza',
+        isFood: true,
+        calories: 720,
+        protein: 32.0,
+        fat: 28.0,
+        carbs: 85.0,
+        description: 'Classic oven-baked crust topped with rich tomato sauce, melted mozzarella cheese, and spicy beef pepperoni slices.',
+        restaurants: [],
+      ),
+      FoodScanResult(
+        foodName: 'Butter Chicken with Garlic Naan',
+        isFood: true,
+        calories: 850,
+        protein: 42.0,
+        fat: 35.0,
+        carbs: 95.0,
+        description: 'Tender chicken pieces simmered in a creamy, spiced tomato and butter sauce, served with traditional clay-oven flatbread.',
+        restaurants: [],
+      ),
+      FoodScanResult(
+        foodName: 'Chocolate Fudge Cake Slice',
+        isFood: true,
+        calories: 420,
+        protein: 5.0,
+        fat: 22.0,
+        carbs: 50.0,
+        description: 'A rich, moist chocolate sponge cake layered and frosted with chocolate fudge icing. High in sugars and fats.',
+        restaurants: [],
+      ),
+      FoodScanResult(
+        foodName: 'Egg Fried Rice with Chicken Manchurian',
+        isFood: true,
+        calories: 680,
+        protein: 26.0,
+        fat: 18.0,
+        carbs: 98.0,
+        description: 'Stir-fried basmati rice with scrambled eggs and vegetables, paired with sweet and sour chicken chunks in red Manchurian gravy.',
         restaurants: [],
       ),
     ];
@@ -662,9 +790,9 @@ class GeminiService {
             '"description" (string, a brief 1-2 sentence description explaining the dish and its nutritional composition), ';
 
         if (locationName != null && locationName.isNotEmpty) {
-          prompt += '"restaurants" (array of objects, containing up to 10 REAL, existing, popular restaurants/spots to eat this food item (or variations of it, e.g. Zinger burger if a burger is scanned) in or near the location "$locationName". Each object must have "name" (string, real restaurant name), "address" (string, the branch name, street, or area name in "$locationName"), "specialty" (string, the specific popular version of this food they are famous for), "openHour" (integer, typical opening hour in 24-hour format, e.g. 11 for 11 AM or 18 for 6 PM), and "closeHour" (integer, typical closing hour in 24-hour format, e.g. 23 for 11 PM or 2 for 2 AM). Do NOT return fake or hallucinated names). ';
+          prompt += '"restaurants" (array of objects, containing up to 10 REAL, existing, popular restaurants/spots to eat this food item (or variations of it, e.g. Zinger burger if a burger is scanned) in or near the location "$locationName". Each object must have "name" (string, real restaurant name), "address" (string, the branch name, street, or area name in "$locationName"), and "specialty" (string, the specific popular version of this food they are famous for), "openHour" (integer, typical opening hour in 24-hour format, e.g. 11 for 11 AM or 18 for 6 PM), and "closeHour" (integer, typical closing hour in 24-hour format, e.g. 23 for 11 PM or 2 for 2 AM). Do NOT return fake or hallucinated names). ';
         } else {
-          prompt += '"restaurants" (array of objects, containing up to 10 famous spots/chains to eat this food. Each object must have "name" (string), "address" (string, e.g., "Main branches / Nationwide"), "specialty" (string), "openHour" (integer, typical opening hour in 24-hour format, e.g. 11), and "closeHour" (integer, typical closing hour in 24-hour format, e.g. 23)). ';
+          prompt += '"restaurants" (array of objects, containing up to 10 famous spots/chains to eat this food. Each object must have "name" (string), "address" (string, e.g., "Main branches / Nationwide"), and "specialty" (string), "openHour" (integer, typical opening hour in 24-hour format, e.g. 11), and "closeHour" (integer, typical closing hour in 24-hour format, e.g. 23)). ';
         }
 
         prompt += 'Ensure the JSON output is strictly formatted. Do not wrap the JSON object in markdown formatting or "```json" blocks. Return only raw, valid JSON.';
@@ -754,7 +882,8 @@ class GeminiService {
             return RestaurantSpot.fromJson(item);
           }).toList();
 
-          if (finalSpots.length < 3) {
+          // ONLY append matching local spots if they are relevant (meaning localOpenSpots is not empty)
+          if (finalSpots.length < 3 && localOpenSpots.isNotEmpty) {
             for (final localSpot in localOpenSpots) {
               final isDuplicate = finalSpots.any((s) => s.name.toLowerCase() == localSpot.name.toLowerCase());
               if (!isDuplicate) {

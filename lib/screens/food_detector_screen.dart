@@ -1044,29 +1044,33 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
 
   Widget _buildRestaurantCard(RestaurantSpot spot, Color primary) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF151B12),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white10),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Left side category bubble
           Container(
-            padding: const EdgeInsets.all(10),
+            height: 52,
+            width: 52,
             decoration: BoxDecoration(
               color: primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(Icons.place, color: primary, size: 24),
+            child: Icon(Icons.restaurant, color: primary, size: 26),
           ),
           const SizedBox(width: 16),
+          // Right side details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Title and open status row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1075,11 +1079,13 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
                         spot.name,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
@@ -1092,11 +1098,11 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
                           Icon(Icons.circle, size: 6, color: Color(0xFFC7F000)),
                           SizedBox(width: 4),
                           Text(
-                            'OPEN',
+                            'OPEN NOW',
                             style: TextStyle(
                               color: Color(0xFFC7F000),
                               fontSize: 9,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
                         ],
@@ -1104,32 +1110,88 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
                     ),
                   ],
                 ),
+                const SizedBox(height: 4),
+                // Rating, category, price
+                Row(
+                  children: [
+                    const Icon(Icons.star, color: Colors.amber, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      spot.rating.toStringAsFixed(1),
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text('•', style: TextStyle(color: Colors.white24, fontSize: 12)),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${spot.category} • ${spot.priceRange}',
+                      style: const TextStyle(color: Colors.white54, fontSize: 12),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Delivery and distance
+                Row(
+                  children: [
+                    const Icon(Icons.access_time_rounded, color: Colors.white38, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      spot.deliveryTime,
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    const SizedBox(width: 10),
+                    const Icon(Icons.directions_bike_rounded, color: Colors.white38, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      spot.distance,
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  ],
+                ),
                 if (spot.specialty.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.star, color: primary, size: 14),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          spot.specialty,
-                          style: TextStyle(
-                            color: primary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.03),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.thumb_up_alt_outlined, color: primary, size: 12),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Famous for: ${spot.specialty}',
+                            style: TextStyle(
+                              color: primary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
-                const SizedBox(height: 6),
-                Text(
-                  spot.address,
-                  style: const TextStyle(
-                    color: Colors.white54,
-                    fontSize: 12,
-                  ),
+                const SizedBox(height: 8),
+                // Location Address
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, color: Colors.white38, size: 14),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        spot.address,
+                        style: const TextStyle(
+                          color: Colors.white38,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -7,6 +7,7 @@ class RestaurantSpot {
   final String address;
   final String specialty;
   final double rating;
+  final int reviewsCount;
   final String deliveryTime;
   final String distance;
   final String category;
@@ -17,6 +18,7 @@ class RestaurantSpot {
     required this.address,
     required this.specialty,
     required this.rating,
+    required this.reviewsCount,
     required this.deliveryTime,
     required this.distance,
     required this.category,
@@ -29,6 +31,7 @@ class RestaurantSpot {
       address: json['address']?.toString() ?? 'Nearby',
       specialty: json['specialty']?.toString() ?? '',
       rating: double.tryParse(json['rating']?.toString() ?? '4.5') ?? 4.5,
+      reviewsCount: int.tryParse(json['reviewsCount']?.toString() ?? json['user_ratings_total']?.toString() ?? '') ?? 120,
       deliveryTime: json['deliveryTime']?.toString() ?? '20-30 mins',
       distance: json['distance']?.toString() ?? '1.5 km',
       category: json['category']?.toString() ?? 'Food',
@@ -89,6 +92,7 @@ class _MockRestaurant {
   final int closeHour;
   final String specialty;
   final double rating;
+  final int reviewsCount;
   final String deliveryTime;
   final String distance;
   final String category;
@@ -103,6 +107,7 @@ class _MockRestaurant {
     required this.closeHour,
     required this.specialty,
     required this.rating,
+    required this.reviewsCount,
     required this.deliveryTime,
     required this.distance,
     required this.category,
@@ -132,6 +137,7 @@ class GeminiService {
       closeHour: 2,
       specialty: 'Beef Seekh Kabab & Sajji',
       rating: 4.5,
+      reviewsCount: 380,
       deliveryTime: '30-45 mins',
       distance: '3.4 km',
       category: 'BBQ • Pakistani',
@@ -146,6 +152,7 @@ class GeminiService {
       closeHour: 1,
       specialty: 'Mutton Behari Kabab',
       rating: 4.6,
+      reviewsCount: 520,
       deliveryTime: '25-40 mins',
       distance: '2.8 km',
       category: 'BBQ • Grill',
@@ -160,6 +167,7 @@ class GeminiService {
       closeHour: 23,
       specialty: 'Double Masala Chicken Biryani',
       rating: 4.7,
+      reviewsCount: 890,
       deliveryTime: '15-25 mins',
       distance: '1.2 km',
       category: 'Biryani • Pakistani',
@@ -174,6 +182,7 @@ class GeminiService {
       closeHour: 0,
       specialty: 'Beef Biryani & Pulao',
       rating: 4.3,
+      reviewsCount: 650,
       deliveryTime: '20-30 mins',
       distance: '1.9 km',
       category: 'Biryani • Fast Food',
@@ -188,6 +197,7 @@ class GeminiService {
       closeHour: 3,
       specialty: 'Beef Fry Kabab',
       rating: 4.4,
+      reviewsCount: 310,
       deliveryTime: '35-50 mins',
       distance: '4.1 km',
       category: 'BBQ • Desi',
@@ -202,6 +212,7 @@ class GeminiService {
       closeHour: 2,
       specialty: 'Sajji & Paneer Reshmi Handi',
       rating: 4.8,
+      reviewsCount: 1200,
       deliveryTime: '40-55 mins',
       distance: '5.2 km',
       category: 'Fine Dining • BBQ',
@@ -216,6 +227,7 @@ class GeminiService {
       closeHour: 1,
       specialty: 'Double Cheese Beef Burger',
       rating: 4.5,
+      reviewsCount: 420,
       deliveryTime: '20-35 mins',
       distance: '1.5 km',
       category: 'Burgers • Fast Food',
@@ -230,6 +242,7 @@ class GeminiService {
       closeHour: 2,
       specialty: 'Swiss Mushroom Burger',
       rating: 4.4,
+      reviewsCount: 290,
       deliveryTime: '25-35 mins',
       distance: '2.1 km',
       category: 'Burgers • Fast Food',
@@ -244,6 +257,7 @@ class GeminiService {
       closeHour: 3,
       specialty: 'Stuffed Crust Pizza',
       rating: 4.3,
+      reviewsCount: 180,
       deliveryTime: '30-40 mins',
       distance: '3.0 km',
       category: 'Pizza • Fast Food',
@@ -258,6 +272,7 @@ class GeminiService {
       closeHour: 22,
       specialty: 'Keto Bowl & Chicken Salad',
       rating: 4.6,
+      reviewsCount: 215,
       deliveryTime: '20-30 mins',
       distance: '1.7 km',
       category: 'Salads • Healthy',
@@ -272,6 +287,7 @@ class GeminiService {
       closeHour: 23,
       specialty: 'Organic Chicken Salad',
       rating: 4.5,
+      reviewsCount: 340,
       deliveryTime: '25-35 mins',
       distance: '2.4 km',
       category: 'Cafe • Healthy',
@@ -286,6 +302,7 @@ class GeminiService {
       closeHour: 3,
       specialty: 'Daal Makhani & Handi',
       rating: 4.4,
+      reviewsCount: 450,
       deliveryTime: '30-45 mins',
       distance: '2.9 km',
       category: 'Desi • Karahi',
@@ -300,6 +317,7 @@ class GeminiService {
       closeHour: 0,
       specialty: 'Chicken Manchurian & Fried Rice',
       rating: 4.5,
+      reviewsCount: 390,
       deliveryTime: '25-40 mins',
       distance: '2.5 km',
       category: 'Chinese • Soup',
@@ -316,6 +334,7 @@ class GeminiService {
       closeHour: 1,
       specialty: 'Chicken Pulao Kabab',
       rating: 4.7,
+      reviewsCount: 1450,
       deliveryTime: '20-30 mins',
       distance: '2.1 km',
       category: 'Pulao • Pakistani',
@@ -330,6 +349,7 @@ class GeminiService {
       closeHour: 22,
       specialty: 'Sada Biryani with Shami Kabab',
       rating: 4.5,
+      reviewsCount: 920,
       deliveryTime: '15-25 mins',
       distance: '1.1 km',
       category: 'Biryani • Pakistani',
@@ -344,6 +364,7 @@ class GeminiService {
       closeHour: 3,
       specialty: 'Butter Chicken Karahi',
       rating: 4.6,
+      reviewsCount: 780,
       deliveryTime: '35-50 mins',
       distance: '3.8 km',
       category: 'Karahi • Desi',
@@ -358,6 +379,7 @@ class GeminiService {
       closeHour: 24,
       specialty: 'Siri Paye',
       rating: 4.4,
+      reviewsCount: 610,
       deliveryTime: '40-60 mins',
       distance: '4.9 km',
       category: 'Desi • Paye',
@@ -372,6 +394,7 @@ class GeminiService {
       closeHour: 23,
       specialty: 'Beef Seekh Kabab',
       rating: 4.5,
+      reviewsCount: 380,
       deliveryTime: '25-35 mins',
       distance: '1.8 km',
       category: 'BBQ • Desi',
@@ -386,6 +409,7 @@ class GeminiService {
       closeHour: 2,
       specialty: 'Chicken Boti / Seekh Kabab',
       rating: 4.3,
+      reviewsCount: 280,
       deliveryTime: '30-40 mins',
       distance: '2.7 km',
       category: 'BBQ • Desi',
@@ -400,6 +424,7 @@ class GeminiService {
       closeHour: 2,
       specialty: 'Son of a Bun Burger',
       rating: 4.4,
+      reviewsCount: 650,
       deliveryTime: '20-30 mins',
       distance: '1.5 km',
       category: 'Burgers • Fast Food',
@@ -414,6 +439,7 @@ class GeminiService {
       closeHour: 1,
       specialty: 'Classic Beef Burger',
       rating: 4.5,
+      reviewsCount: 320,
       deliveryTime: '25-35 mins',
       distance: '2.0 km',
       category: 'Burgers • Fast Food',
@@ -428,6 +454,7 @@ class GeminiService {
       closeHour: 23,
       specialty: 'High Protein Chicken Salad',
       rating: 4.6,
+      reviewsCount: 180,
       deliveryTime: '20-30 mins',
       distance: '1.6 km',
       category: 'Salads • Healthy',
@@ -442,6 +469,7 @@ class GeminiService {
       closeHour: 22,
       specialty: 'Avocado Quinoa Salad',
       rating: 4.5,
+      reviewsCount: 230,
       deliveryTime: '25-35 mins',
       distance: '2.2 km',
       category: 'Cafe • Healthy',
@@ -456,6 +484,7 @@ class GeminiService {
       closeHour: 1,
       specialty: 'Deep Dish Pizza & Fudge Cake',
       rating: 4.4,
+      reviewsCount: 350,
       deliveryTime: '30-40 mins',
       distance: '3.1 km',
       category: 'Pizza • Desserts',
@@ -470,6 +499,7 @@ class GeminiService {
       closeHour: 3,
       specialty: 'Daal Makhani & Mutton Handi',
       rating: 4.4,
+      reviewsCount: 580,
       deliveryTime: '30-45 mins',
       distance: '2.9 km',
       category: 'Desi • Karahi',
@@ -484,6 +514,7 @@ class GeminiService {
       closeHour: 1,
       specialty: 'Pista Ice Cream & Falooda',
       rating: 4.5,
+      reviewsCount: 780,
       deliveryTime: '15-25 mins',
       distance: '1.1 km',
       category: 'Desserts • Sweets',
@@ -498,6 +529,7 @@ class GeminiService {
       closeHour: 0,
       specialty: 'Chicken Manchurian & Fried Rice',
       rating: 4.5,
+      reviewsCount: 410,
       deliveryTime: '25-40 mins',
       distance: '2.5 km',
       category: 'Chinese • Soup',
@@ -514,6 +546,7 @@ class GeminiService {
       closeHour: 1,
       specialty: 'Chicken Pulao Kabab',
       rating: 4.7,
+      reviewsCount: 2100,
       deliveryTime: '20-30 mins',
       distance: '2.1 km',
       category: 'Pulao • Pakistani',
@@ -528,6 +561,7 @@ class GeminiService {
       closeHour: 1,
       specialty: 'Chicken Pulao Kabab',
       rating: 4.7,
+      reviewsCount: 1850,
       deliveryTime: '20-30 mins',
       distance: '2.1 km',
       category: 'Pulao • Pakistani',
@@ -542,6 +576,7 @@ class GeminiService {
       closeHour: 23,
       specialty: 'Afghani Kabab / Tikka',
       rating: 4.6,
+      reviewsCount: 780,
       deliveryTime: '25-35 mins',
       distance: '1.8 km',
       category: 'BBQ • Afghan',
@@ -556,6 +591,7 @@ class GeminiService {
       closeHour: 0,
       specialty: 'Chicken Makhani Handi',
       rating: 4.8,
+      reviewsCount: 3400,
       deliveryTime: '40-55 mins',
       distance: '5.5 km',
       category: 'Fine Dining • Desi',
@@ -570,6 +606,7 @@ class GeminiService {
       closeHour: 23,
       specialty: 'Chicken Karahi',
       rating: 4.4,
+      reviewsCount: 420,
       deliveryTime: '30-40 mins',
       distance: '2.4 km',
       category: 'Desi • Karahi',
@@ -584,6 +621,7 @@ class GeminiService {
       closeHour: 3,
       specialty: 'Bihari Kabab Pizza / Crown Crust',
       rating: 4.6,
+      reviewsCount: 1150,
       deliveryTime: '25-35 mins',
       distance: '1.9 km',
       category: 'Pizza • Fast Food',
@@ -598,6 +636,7 @@ class GeminiService {
       closeHour: 3,
       specialty: 'Bihari Kabab Pizza / Crown Crust',
       rating: 4.6,
+      reviewsCount: 920,
       deliveryTime: '25-35 mins',
       distance: '1.9 km',
       category: 'Pizza • Fast Food',
@@ -612,6 +651,7 @@ class GeminiService {
       closeHour: 23,
       specialty: 'Mushroom Swiss Burger',
       rating: 4.4,
+      reviewsCount: 290,
       deliveryTime: '30-40 mins',
       distance: '2.3 km',
       category: 'Burgers • Grill',
@@ -626,6 +666,7 @@ class GeminiService {
       closeHour: 22,
       specialty: 'Grilled Fish Bowl',
       rating: 4.5,
+      reviewsCount: 145,
       deliveryTime: '20-30 mins',
       distance: '1.6 km',
       category: 'Salads • Healthy',
@@ -640,6 +681,7 @@ class GeminiService {
       closeHour: 22,
       specialty: 'Grilled Chicken Caesar Salad',
       rating: 4.5,
+      reviewsCount: 165,
       deliveryTime: '20-30 mins',
       distance: '1.6 km',
       category: 'Salads • Healthy',
@@ -654,6 +696,7 @@ class GeminiService {
       closeHour: 23,
       specialty: 'Chocolate Fudge Cake & Cookies',
       rating: 4.5,
+      reviewsCount: 310,
       deliveryTime: '15-25 mins',
       distance: '1.2 km',
       category: 'Bakery • Sweets',
@@ -670,6 +713,7 @@ class GeminiService {
       closeHour: 3,
       specialty: 'Zinger Burger & Fries',
       rating: 4.4,
+      reviewsCount: 2300,
       deliveryTime: '20-30 mins',
       distance: '1.8 km',
       category: 'Fast Food • Burgers',
@@ -684,6 +728,7 @@ class GeminiService {
       closeHour: 3,
       specialty: 'Big Mac & Fries',
       rating: 4.5,
+      reviewsCount: 3400,
       deliveryTime: '15-25 mins',
       distance: '1.5 km',
       category: 'Fast Food • Burgers',
@@ -698,6 +743,7 @@ class GeminiService {
       closeHour: 2,
       specialty: 'Tex-Mex Chicken Pizza',
       rating: 4.4,
+      reviewsCount: 1200,
       deliveryTime: '30-40 mins',
       distance: '2.0 km',
       category: 'Pizza • Fast Food',
@@ -712,6 +758,7 @@ class GeminiService {
       closeHour: 1,
       specialty: 'Chicken Tikka Pizza',
       rating: 4.2,
+      reviewsCount: 1500,
       deliveryTime: '30-40 mins',
       distance: '2.2 km',
       category: 'Pizza • Fast Food',
@@ -726,6 +773,7 @@ class GeminiService {
       closeHour: 23,
       specialty: 'Roasted Chicken Sub & Salad',
       rating: 4.5,
+      reviewsCount: 950,
       deliveryTime: '20-30 mins',
       distance: '1.7 km',
       category: 'Healthy • Fast Food',
@@ -740,6 +788,7 @@ class GeminiService {
       closeHour: 2,
       specialty: 'Gourmet Fries & Beef Burger',
       rating: 4.3,
+      reviewsCount: 850,
       deliveryTime: '20-30 mins',
       distance: '1.9 km',
       category: 'Fast Food • Fries',
@@ -841,9 +890,7 @@ class GeminiService {
       }
     }
 
-    // If still empty (meaning unrecognized food tags, or no restaurants matching tags),
-    // do NOT return any random ones. Fallback to general open fast food/desi spots in the city or nationwide
-    // so we always have at least some generic dining choices instead of Biryani for Sushi.
+    // Fallback if tagMatches remains empty (e.g. unrecognized food item like Tom Yum, Lasagna, etc.)
     if (tagMatches.isEmpty) {
       final fallbackTags = ['fast food', 'desi'];
       tagMatches = matchingRestaurants.where((r) {
@@ -865,12 +912,66 @@ class GeminiService {
         address: r.address,
         specialty: r.specialty.isNotEmpty ? r.specialty : foodName,
         rating: r.rating,
+        reviewsCount: r.reviewsCount,
         deliveryTime: r.deliveryTime,
         distance: r.distance,
         category: r.category,
         priceRange: r.priceRange,
       );
     }).toList();
+  }
+
+  static Future<List<RestaurantSpot>> fetchPlacesFromGoogle({
+    required String foodName,
+    required String? locationName,
+    required String apiKey,
+  }) async {
+    try {
+      final city = getCityFromLocation(locationName);
+      final query = city.isNotEmpty ? '$foodName in $city' : '$foodName in $locationName';
+      final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/place/textsearch/json?query=${Uri.encodeComponent(query)}&type=restaurant&key=$apiKey'
+      );
+      
+      final response = await http.get(url).timeout(const Duration(seconds: 4));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'OK') {
+          final results = data['results'] as List? ?? [];
+          final List<RestaurantSpot> spots = [];
+          
+          for (final place in results) {
+            final name = place['name']?.toString() ?? '';
+            final address = place['formatted_address']?.toString() ?? place['vicinity']?.toString() ?? '';
+            final rating = double.tryParse(place['rating']?.toString() ?? '4.5') ?? 4.5;
+            final userRatingsTotal = int.tryParse(place['user_ratings_total']?.toString() ?? '') ?? 120;
+            
+            // Check if open
+            final openingHours = place['opening_hours'] as Map<String, dynamic>?;
+            final openNow = openingHours != null ? (openingHours['open_now'] == true) : true;
+            
+            // Hide closed ones
+            if (!openNow) continue;
+            
+            spots.add(RestaurantSpot(
+              name: name,
+              address: address,
+              specialty: foodName,
+              rating: rating,
+              reviewsCount: userRatingsTotal,
+              deliveryTime: '${15 + (rating * 5).round()}-${25 + (rating * 5).round()} mins',
+              distance: '${(1.0 + (rating % 2) * 1.5).toStringAsFixed(1)} km',
+              category: 'Restaurant',
+              priceRange: r'$$',
+            ));
+          }
+          return spots;
+        }
+      }
+    } catch (e) {
+      // Fail silently and let other options fallback
+    }
+    return [];
   }
 
   static FoodScanResult _generateMockResult(String? locationName) {
@@ -1013,7 +1114,15 @@ class GeminiService {
             '"protein" (number, estimation of protein in grams per serving), '
             '"fat" (number, estimation of fat in grams per serving), '
             '"carbs" (number, estimation of carbohydrates in grams per serving), '
-            '"description" (string, a brief 1-2 sentence description explaining the dish and its nutritional composition). Do not return any restaurants in the JSON.';
+            '"description" (string, a brief 1-2 sentence description explaining the dish and its nutritional composition), ';
+
+        if (locationName != null && locationName.isNotEmpty) {
+          prompt += '"restaurants" (array of objects, containing up to 10 REAL, existing, popular restaurants/spots to eat this food item in or near the location "$locationName". Each object must have "name" (string, real restaurant name), "address" (string, address in "$locationName"), "specialty" (string, the recommended dish), "rating" (number, e.g. 4.6), "deliveryTime" (string, e.g. "20-30 mins"), "distance" (string, e.g. "1.5 km"), "category" (string, category name), "priceRange" (string, e.g. "\$\$"), "openHour" (integer, typical opening hour in 24h format, e.g. 11), and "closeHour" (integer, typical closing hour in 24h format, e.g. 23 or 2 for 2 AM). Do NOT return fake or hallucinated names). ';
+        } else {
+          prompt += '"restaurants" (array of objects, containing up to 10 famous spots/chains to eat this food. Each object must have "name" (string), "address" (string), "specialty" (string), "rating" (number), "deliveryTime" (string), "distance" (string), "category" (string), "priceRange" (string), "openHour" (integer), and "closeHour" (integer)). ';
+        }
+
+        prompt += 'Ensure the JSON output is strictly formatted. Do not wrap the JSON object in markdown formatting or "```json" blocks. Return only raw, valid JSON.';
 
         final requestBody = {
           'contents': [
@@ -1070,11 +1179,44 @@ class GeminiService {
 
           final String foodName = jsonMap['foodName']?.toString() ?? 'Unknown Food';
           
-          // Generate 100% accurate, open restaurant suggestions from our verified local database
-          final verifiedOpenSpots = getMockSuggestions(
+          // 1. First, attempt to retrieve live matching restaurants using Google Places API (Text Search)
+          List<RestaurantSpot> finalSpots = await fetchPlacesFromGoogle(
             foodName: foodName,
             locationName: locationName,
+            apiKey: apiKey,
           );
+
+          // 2. Fallback to Gemini's generated open restaurants list if Google Places returned nothing
+          if (finalSpots.isEmpty) {
+            final List<dynamic> rawRestaurants = jsonMap['restaurants'] as List? ?? [];
+            final currentHour = DateTime.now().hour;
+
+            for (final item in rawRestaurants) {
+              if (item is Map<String, dynamic>) {
+                final openHour = int.tryParse(item['openHour']?.toString() ?? '') ?? 11;
+                final closeHour = int.tryParse(item['closeHour']?.toString() ?? '') ?? 23;
+                
+                bool isOpen = true;
+                if (closeHour > openHour) {
+                  isOpen = currentHour >= openHour && currentHour < closeHour;
+                } else if (closeHour < openHour) {
+                  isOpen = currentHour >= openHour || currentHour < closeHour;
+                }
+                
+                if (isOpen) {
+                  finalSpots.add(RestaurantSpot.fromJson(item));
+                }
+              }
+            }
+          }
+
+          // 3. Fallback to our verified mock database suggestions if still empty
+          if (finalSpots.isEmpty) {
+            finalSpots = getMockSuggestions(
+              foodName: foodName,
+              locationName: locationName,
+            );
+          }
 
           return FoodScanResult(
             foodName: foodName,
@@ -1084,7 +1226,7 @@ class GeminiService {
             fat: toDouble(jsonMap['fat'] ?? jsonMap['fats']),
             carbs: toDouble(jsonMap['carbs'] ?? jsonMap['carbohydrates']),
             description: jsonMap['description']?.toString() ?? '',
-            restaurants: verifiedOpenSpots,
+            restaurants: finalSpots,
           );
         } else {
           final bodyJson = jsonDecode(response.body);

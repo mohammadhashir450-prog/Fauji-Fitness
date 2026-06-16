@@ -1114,10 +1114,20 @@ class _FoodDetectorScreenState extends State<FoodDetectorScreen> with SingleTick
                 // Rating, category, price
                 Row(
                   children: [
-                    const Icon(Icons.star, color: Colors.amber, size: 14),
-                    const SizedBox(width: 4),
+                    // Render 5 stars dynamically based on rating value
+                    ...List.generate(5, (index) {
+                      final starVal = index + 1;
+                      if (spot.rating >= starVal) {
+                        return const Icon(Icons.star, color: Colors.amber, size: 14);
+                      } else if (spot.rating >= starVal - 0.5) {
+                        return const Icon(Icons.star_half, color: Colors.amber, size: 14);
+                      } else {
+                        return const Icon(Icons.star_border, color: Colors.white24, size: 14);
+                      }
+                    }),
+                    const SizedBox(width: 6),
                     Text(
-                      spot.rating.toStringAsFixed(1),
+                      '${spot.rating.toStringAsFixed(1)} (${spot.reviewsCount}+ reviews)',
                       style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(width: 6),

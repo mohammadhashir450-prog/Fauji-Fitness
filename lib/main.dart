@@ -11,7 +11,6 @@ import 'providers/step_provider.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/weight_tracker_screen.dart';
-import 'screens/community_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/food_detector_screen.dart';
 import 'dart:convert';
@@ -275,7 +274,8 @@ class _AppShellState extends State<AppShell> {
     if (user == null || user.heightCm == null || latestWeight == null) return null;
     final h = user.heightM;
     if (h == null || h == 0) return null;
-    return latestWeight / (h * h);
+    final weightKg = latestWeight * 0.45359237; // convert lbs to kg for BMI
+    return weightKg / (h * h);
   }
 
   @override
@@ -292,7 +292,6 @@ class _AppShellState extends State<AppShell> {
       const DashboardScreen(),
       const WeightTrackerScreen(),
       const FoodDetectorScreen(),
-      const CommunityScreen(),
       const ProfileScreen(),
     ];
 
@@ -331,7 +330,6 @@ class _AppShellState extends State<AppShell> {
               NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
               NavigationDestination(icon: Icon(Icons.monitor_weight_outlined), selectedIcon: Icon(Icons.monitor_weight), label: 'Weight'),
               NavigationDestination(icon: Icon(Icons.camera_alt_outlined), selectedIcon: Icon(Icons.camera_alt), label: 'Scan Food'),
-              NavigationDestination(icon: Icon(Icons.groups_outlined), selectedIcon: Icon(Icons.groups), label: 'Community'),
               NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
             ],
           ),
@@ -398,8 +396,7 @@ class _GlobalFitnessDrawer extends StatelessWidget {
             _drawerItem(Icons.home, 'Home', () => onNavigate(0)),
             _drawerItem(Icons.monitor_weight, 'Weight Tracker', () => onNavigate(1)),
             _drawerItem(Icons.fastfood, 'Food Scanner', () => onNavigate(2)),
-            _drawerItem(Icons.groups, 'Community', () => onNavigate(3)),
-            _drawerItem(Icons.person, 'Profile', () => onNavigate(4)),
+            _drawerItem(Icons.person, 'Profile', () => onNavigate(3)),
             const Spacer(),
             _drawerItem(Icons.logout, 'Logout', () async {
               final authService = context.read<AuthService>();

@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/weight_provider.dart';
-import '../providers/step_provider.dart';
+import '../providers/user_provider.dart';
+import '../models/user.dart';
 import '../widgets/fitness_widgets.dart';
 
 class WeightTrackerScreen extends StatefulWidget {
@@ -18,17 +19,78 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
   double? _weight;
   int _selectedRange = 0;
 
+
+
+  Widget _buildBmiCard(double? bmi, Color neonGreen) {
+    if (bmi == null) return const SizedBox.shrink();
+    final category = _bmiCategory(bmi);
+    final isHealthy = category == 'HEALTHY';
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF121826),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: neonGreen.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.monitor_weight_outlined, color: neonGreen, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'BODY MASS INDEX (BMI)',
+                  style: TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      bmi.toStringAsFixed(1),
+                      style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isHealthy ? const Color(0xFFC7F000).withValues(alpha: 0.15) : Colors.redAccent.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        category,
+                        style: TextStyle(
+                          color: isHealthy ? const Color(0xFFC7F000) : Colors.redAccent,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final prov = context.watch<WeightProvider>();
     final latest = prov.entries.isEmpty ? null : prov.entries.last.weightKg;
-    final bmi = _bmiFromWeight(latest);
-    final goal = latest == null ? null : 178.0;
-    final bodyFat = latest == null ? null : 14.8;
-    
-    final stepData = context.watch<StepProvider>();
-    final currentSteps = stepData.steps;
-    final heartRate = stepData.heartRate > 0 ? stepData.heartRate : 72;
+    final user = context.watch<UserProvider>().user;
+    final bmi = _bmiFromWeight(latest, user);
+    const neonGreen = Color(0xFFC7F000);
 
     return Scaffold(
       appBar: AppBar(
@@ -49,10 +111,6 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
             const Text('FORGE AHEAD', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.4)),
           ],
         ),
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none_rounded, color: Color(0xFFC7F000))),
-          const SizedBox(width: 6),
-        ],
       ),
       body: SafeArea(
         child: ListView(
@@ -152,38 +210,10 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            GridView.count(
-              crossAxisCount: 3,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.85,
-              children: [
-                NeonMetricTile(
-                  title: 'BMI',
-                  value: bmi == null ? '--' : bmi.toStringAsFixed(1),
-                  subtitle: bmi == null ? 'SET UP' : _bmiCategory(bmi),
-                  icon: Icons.monitor_weight_outlined,
-                  accent: const Color(0xFFC7F000),
-                ),
-                NeonMetricTile(
-                  title: 'BODY FAT %',
-                  value: bodyFat == null ? '--' : bodyFat.toStringAsFixed(1),
-                  subtitle: null,
-                  icon: Icons.graphic_eq,
-                  accent: const Color(0xFFC7F000),
-                ),
-                NeonMetricTile(
-                  title: 'GOAL',
-                  value: goal == null ? '--' : goal.toStringAsFixed(0),
-                  subtitle: 'LBS',
-                  icon: Icons.flag_outlined,
-                  accent: const Color(0xFFC7F000),
-                ),
-              ],
-            ),
-            const SizedBox(height: 22),
+            if (bmi != null) ...[
+              _buildBmiCard(bmi, neonGreen),
+              const SizedBox(height: 18),
+            ],
             const Text('Recent Logs', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
             const SizedBox(height: 12),
             if (prov.entries.isEmpty)
@@ -206,43 +236,6 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                 );
               }),
             const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF141813),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFFC7F000).withValues(alpha: 0.45)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.directions_walk_rounded, color: Color(0xFFC7F000), size: 18),
-                        const SizedBox(width: 8),
-                        Text('$currentSteps', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
-                        const SizedBox(width: 6),
-                        const Text('STEPS', style: TextStyle(color: Colors.white60, fontWeight: FontWeight.w700)),
-                      ],
-                    ),
-                  ),
-                  Container(width: 1, height: 28, color: Colors.white12),
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.favorite_border_rounded, color: Color(0xFFFF3B30), size: 18),
-                        const SizedBox(width: 8),
-                        Text('$heartRate', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
-                        const SizedBox(width: 6),
-                        const Text('BPM', style: TextStyle(color: Colors.white60, fontWeight: FontWeight.w700)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -296,9 +289,12 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
     );
   }
 
-  double? _bmiFromWeight(double? weight) {
-    if (weight == null) return null;
-    return 24.2;
+  double? _bmiFromWeight(double? weight, UserProfile? user) {
+    if (weight == null || user == null || user.heightCm == null) return null;
+    final weightKg = weight * 0.45359237; // convert logged lbs to kg
+    final h = user.heightCm! / 100.0;
+    if (h == 0) return null;
+    return weightKg / (h * h);
   }
 
   static double? _previousWeight(List entries, dynamic current) {
@@ -308,10 +304,10 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
   }
 
   static String _bmiCategory(double bmi) {
-    if (bmi < 18.5) return 'NORMAL';
-    if (bmi < 25) return 'NORMAL';
-    if (bmi < 30) return 'HEALTHY';
-    return 'HIGH';
+    if (bmi < 18.5) return 'UNDERWEIGHT';
+    if (bmi < 25) return 'HEALTHY';
+    if (bmi < 30) return 'OVERWEIGHT';
+    return 'OBESE';
   }
 
   static String _timeAgo(DateTime date) {

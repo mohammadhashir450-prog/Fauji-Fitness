@@ -242,9 +242,7 @@ class StepProvider extends ChangeNotifier {
           _lastEventTime = now;
         } else {
           final diff = event.steps - _lastSensorSteps;
-          // Android hardware sensors batch steps to save power. 
-          // We apply a reasonable sanity check (discarding updates > 500 steps per single update)
-          if (diff > 0 && diff < 500) {
+          if (diff > 0) {
             _steps += diff;
           }
           _lastSensorSteps = event.steps;

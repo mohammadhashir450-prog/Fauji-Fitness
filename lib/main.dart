@@ -10,7 +10,6 @@ import 'providers/navigation_provider.dart';
 import 'providers/step_provider.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/profile_screen.dart';
-import 'screens/weight_tracker_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/food_detector_screen.dart';
 import 'dart:convert';
@@ -270,27 +269,14 @@ class _AppShellState extends State<AppShell> {
     setIndex(index);
   }
 
-  double? _bmiValue(UserProfile? user, double? latestWeight) {
-    if (user == null || user.heightCm == null || latestWeight == null) return null;
-    final h = user.heightM;
-    if (h == null || h == 0) return null;
-    final weightKg = latestWeight * 0.45359237; // convert lbs to kg for BMI
-    return weightKg / (h * h);
-  }
-
   @override
   Widget build(BuildContext context) {
     final nav = context.watch<NavigationProvider>();
     final user = context.watch<UserProvider>().user;
-    final weightProv = context.watch<WeightProvider>();
-
-    final latestWeight = weightProv.entries.isEmpty ? null : weightProv.entries.last.weightKg;
-    final bmi = _bmiValue(user, latestWeight);
     final index = nav.index;
 
     final pages = [
       const DashboardScreen(),
-      const WeightTrackerScreen(),
       const FoodDetectorScreen(),
       const ProfileScreen(),
     ];
@@ -299,7 +285,6 @@ class _AppShellState extends State<AppShell> {
       key: _scaffoldKey,
       drawer: _GlobalFitnessDrawer(
         user: user,
-        bmi: bmi,
         onNavigate: navigateFromDrawer,
       ),
       body: IndexedStack(index: index, children: pages),
@@ -328,7 +313,6 @@ class _AppShellState extends State<AppShell> {
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             destinations: const [
               NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-              NavigationDestination(icon: Icon(Icons.monitor_weight_outlined), selectedIcon: Icon(Icons.monitor_weight), label: 'Weight'),
               NavigationDestination(icon: Icon(Icons.camera_alt_outlined), selectedIcon: Icon(Icons.camera_alt), label: 'Scan Food'),
               NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
             ],
@@ -341,19 +325,15 @@ class _AppShellState extends State<AppShell> {
 
 class _GlobalFitnessDrawer extends StatelessWidget {
   final UserProfile? user;
-  final double? bmi;
   final ValueChanged<int> onNavigate;
 
   const _GlobalFitnessDrawer({
     required this.user,
-    required this.bmi,
     required this.onNavigate,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bmiText = bmi == null ? 'Set profile to unlock insights' : 'BMI ${bmi!.toStringAsFixed(1)}';
-
     return Drawer(
       backgroundColor: const Color(0xFF0B0D0A),
       child: SafeArea(
@@ -385,7 +365,7 @@ class _GlobalFitnessDrawer extends StatelessWidget {
                             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 4),
-                          Text(bmiText, style: const TextStyle(color: Colors.white54)),
+                          const Text('Fauji Fitness Athlete', style: TextStyle(color: Colors.white54)),
                         ],
                       ),
                     ),
@@ -394,9 +374,8 @@ class _GlobalFitnessDrawer extends StatelessWidget {
               ),
             ),
             _drawerItem(Icons.home, 'Home', () => onNavigate(0)),
-            _drawerItem(Icons.monitor_weight, 'Weight Tracker', () => onNavigate(1)),
-            _drawerItem(Icons.fastfood, 'Food Scanner', () => onNavigate(2)),
-            _drawerItem(Icons.person, 'Profile', () => onNavigate(3)),
+            _drawerItem(Icons.fastfood, 'Food Scanner', () => onNavigate(1)),
+            _drawerItem(Icons.person, 'Profile', () => onNavigate(2)),
             const Spacer(),
             _drawerItem(Icons.logout, 'Logout', () async {
               final authService = context.read<AuthService>();

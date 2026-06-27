@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.jym_app"
-    compileSdk = 36 // Updated to 36 for health and device_info_plus
+    compileSdk = 36 // Required for latest health and device_info_plus versions
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -22,7 +22,7 @@ android {
     defaultConfig {
         applicationId = "com.example.jym_app"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

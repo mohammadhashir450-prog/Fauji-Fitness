@@ -7,7 +7,7 @@ import '../../features/step_counter/presentation/step_counter_screen.dart';
 import '../../screens/dashboard_screen.dart';
 import '../../screens/profile_screen.dart';
 import '../../screens/splash_screen.dart';
-import '../../screens/weight_tracker_screen.dart';
+
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -32,7 +32,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/login', name: 'login', builder: (context, state) => LoginScreen()),
       GoRoute(path: '/dashboard', name: 'dashboard', builder: (context, state) => DashboardScreen()),
       GoRoute(path: '/steps', name: 'steps', builder: (context, state) => StepCounterScreen()),
-      GoRoute(path: '/weight', name: 'weight', builder: (context, state) => WeightTrackerScreen()),
+
       GoRoute(path: '/profile', name: 'profile', builder: (context, state) => ProfileScreen()),
     ],
   );

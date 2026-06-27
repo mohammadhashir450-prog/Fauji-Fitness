@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import '../providers/user_provider.dart';
-import '../services/storage_service.dart';
 import 'registration_screen.dart';
 import '../main.dart';
 
@@ -49,17 +47,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      final errorStr = e.toString();
-      if (errorStr.contains('API key') || errorStr.contains('firebase_auth/unknown')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Firebase API Key invalid. Switching to Local Warrior Mode...')),
-        );
-        _proceedLocalMode();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed: ${e.toString()}')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed: ${e.toString()}')),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -78,17 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      final errorStr = e.toString();
-      if (errorStr.contains('API key') || errorStr.contains('firebase_auth/unknown')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Firebase API Key invalid. Switching to Local Warrior Mode...')),
-        );
-        _proceedLocalMode();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Google Login failed: ${e.toString()}')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google Login failed: ${e.toString()}')),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -265,36 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                // Local Warrior Mode Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFC7F000), width: 1.5),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      backgroundColor: const Color(0xFFC7F000).withValues(alpha: 0.05),
-                    ),
-                    onPressed: _isLoading ? null : _proceedLocalMode,
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.offline_bolt, color: Color(0xFFC7F000), size: 20),
-                        SizedBox(width: 12),
-                        Text(
-                          'LOCAL WARRIOR MODE (OFFLINE)',
-                          style: TextStyle(
-                            color: Color(0xFFC7F000),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+
                 const SizedBox(height: 24),
                 // Registration Link
                 Row(
@@ -476,36 +429,5 @@ class _LoginScreenState extends State<LoginScreen> {
 
 
 
-  void _proceedLocalMode() async {
-    setState(() => _isLoading = true);
-    try {
-      final userProvider = context.read<UserProvider>();
-      final localUser = await const StorageService().loadUser();
-      if (localUser != null) {
-        await userProvider.load();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Logged in successfully in Local Mode!')),
-        );
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const AppShell()),
-        );
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No local profile found. Please register first.')),
-        );
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const RegistrationScreen()),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Local login failed: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
+
 }

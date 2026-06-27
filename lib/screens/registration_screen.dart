@@ -85,17 +85,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      final errorStr = e.toString();
-      if (errorStr.contains('API key') || errorStr.contains('firebase_auth/unknown')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Firebase API Key invalid. Registering you in Local Mode...')),
-        );
-        _proceedLocalMode();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration failed: ${e.toString()}')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registration failed: ${e.toString()}')),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -324,52 +316,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                             ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                          color: _agreeTerms ? const Color(0xFFC7F000) : Colors.grey,
-                          width: 1.5,
-                        ),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        backgroundColor: _agreeTerms
-                            ? const Color(0xFFC7F000).withValues(alpha: 0.05)
-                            : Colors.transparent,
-                      ),
-                      onPressed: _agreeTerms && !_isLoading ? _proceedLocalMode : null,
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC7F000)),
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.offline_bolt,
-                                  color: _agreeTerms ? const Color(0xFFC7F000) : Colors.grey,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'REGISTER IN LOCAL MODE (OFFLINE)',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w800,
-                                    color: _agreeTerms ? const Color(0xFFC7F000) : Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
-                  ),
+
                   const SizedBox(height: 24),
                   Center(
                     child: Row(
@@ -664,46 +611,5 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
 
 
-  Future<void> _proceedLocalMode() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (!_agreeTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please agree to Terms & Conditions')),
-      );
-      return;
-    }
 
-    setState(() => _isLoading = true);
-
-    try {
-      final userProvider = context.read<UserProvider>();
-
-      await userProvider.createOrUpdate(
-        name: _nameController.text.trim(),
-        sex: _selectedSex,
-        heightCm: double.tryParse(_heightController.text),
-        goal: _selectedGoal,
-        membershipType: _selectedMembership,
-        memberCategory: _selectedCategory,
-        darkMode: true,
-      );
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration successful in Local Mode! Welcome Warrior.')),
-      );
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const AppShell()),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Local registration failed: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
 }

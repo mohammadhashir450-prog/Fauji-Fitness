@@ -20,8 +20,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = userProv.user;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final cardBg = theme.colorScheme.surface;
     final primaryColor = const Color(0xFFC7F000);
+    
+    // Dynamic text colors to prevent white text on white background in Light mode!
+    final textColorMain = isDark ? Colors.white : Colors.black87;
+    final textColorSub = isDark ? Colors.white38 : Colors.black54;
+    final cardBgColor = isDark ? const Color(0xFF141414) : const Color(0xFFF5F5F5);
+    final accentGreen = isDark ? const Color(0xFFC7F000) : const Color(0xFF558B2F);
 
     return Scaffold(
       appBar: AppBar(
@@ -30,24 +35,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: Row(
           children: [
             const SizedBox(width: 16),
-            const CircleAvatar(
+            CircleAvatar(
               radius: 14,
-              backgroundColor: Color(0xFFC7F000),
-              child: CircleAvatar(
+              backgroundColor: primaryColor,
+              child: const CircleAvatar(
                 radius: 12,
                 backgroundColor: Color(0xFF0B0D0A),
                 child: Icon(Icons.fitness_center, size: 12, color: Color(0xFFC7F000)),
               ),
             ),
             const SizedBox(width: 10),
-            const Text('MY PROFILE', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.4)),
+            Text(
+              'MY PROFILE',
+              style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.4, color: textColorMain),
+            ),
           ],
         ),
         actions: [
           Builder(
             builder: (context) => IconButton(
               onPressed: () => appShellScaffoldKey.currentState?.openDrawer(),
-              icon: const Icon(Icons.menu_rounded, color: Color(0xFFC7F000)),
+              icon: Icon(Icons.menu_rounded, color: primaryColor),
             ),
           ),
           const SizedBox(width: 6),
@@ -55,23 +63,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: SafeArea(
         child: user == null
-            ? const Center(
+            ? Center(
                 child: Text(
                   'No athlete profile loaded.',
-                  style: TextStyle(color: Colors.white70),
+                  style: TextStyle(color: textColorSub),
                 ),
               )
             : ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 children: [
-                  // 🌟 UNIQUE HERO CARD (GLOWING ACCENTS)
+                  // 🌟 UNIQUE HERO CARD (GLOWING ACCENTS / DYNAMIC GRADIENTS)
                   _buildUniqueHeroCard(user, isDark),
                   const SizedBox(height: 20),
                   
                   // 📊 BIOMETRIC DATA (GRID DISPLAY)
-                  const Text(
+                  Text(
                     'BIOMETRIC DATA',
-                    style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.5),
+                    style: TextStyle(color: textColorSub, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.5),
                   ),
                   const SizedBox(height: 10),
                   GridView.count(
@@ -82,30 +90,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     mainAxisSpacing: 12,
                     childAspectRatio: 1.5,
                     children: [
-                      _buildInfoTile(Icons.height, 'HEIGHT', user.heightCm == null ? '--' : '${user.heightCm!.toStringAsFixed(0)} CM', primaryColor),
-                      _buildInfoTile(Icons.flag, 'PRIMARY GOAL', user.goal.name.toUpperCase(), primaryColor),
-                      _buildInfoTile(Icons.wc, 'GENDER', user.sex.toUpperCase(), primaryColor),
-                      _buildInfoTile(Icons.badge, 'CATEGORY', (user.memberCategory ?? MemberCategory.male).name.toUpperCase(), primaryColor),
+                      _buildInfoTile(Icons.height, 'HEIGHT', user.heightCm == null ? '--' : '${user.heightCm!.toStringAsFixed(0)} CM', accentGreen, cardBgColor, textColorMain, textColorSub),
+                      _buildInfoTile(Icons.flag, 'PRIMARY GOAL', user.goal.name.toUpperCase(), accentGreen, cardBgColor, textColorMain, textColorSub),
+                      _buildInfoTile(Icons.wc, 'GENDER', user.sex.toUpperCase(), accentGreen, cardBgColor, textColorMain, textColorSub),
+                      _buildInfoTile(Icons.badge, 'CATEGORY', (user.memberCategory ?? MemberCategory.male).name.toUpperCase(), accentGreen, cardBgColor, textColorMain, textColorSub),
                     ],
                   ),
                   const SizedBox(height: 20),
 
                   // 💳 MEMBERSHIP LEVEL
-                  const Text(
+                  Text(
                     'MEMBERSHIP DETAILS',
-                    style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.5),
+                    style: TextStyle(color: textColorSub, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.5),
                   ),
                   const SizedBox(height: 10),
-                  _buildMembershipDetailCard(user, cardBg, primaryColor),
+                  _buildMembershipDetailCard(user, cardBgColor, accentGreen, textColorMain, textColorSub),
                   const SizedBox(height: 20),
 
                   // ⚙️ PREFERENCES
-                  const Text(
+                  Text(
                     'PREFERENCES',
-                    style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.5),
+                    style: TextStyle(color: textColorSub, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.5),
                   ),
                   const SizedBox(height: 10),
-                  _buildPreferencesCard(userProv, user, cardBg, primaryColor),
+                  _buildPreferencesCard(userProv, user, cardBgColor, accentGreen, textColorMain, textColorSub),
                   const SizedBox(height: 24),
 
                   // 🚀 ACTION BUTTON
@@ -130,22 +138,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildUniqueHeroCard(UserProfile user, bool isDark) {
+    // Dynamic gradient based on Dark/Light theme mode
+    final gradColors = isDark 
+      ? [const Color(0xFF182310), const Color(0xFF0F150A)]
+      : [const Color(0xFFE8F5E9), const Color(0xFFC8E6C9)];
+    
+    final borderCol = isDark 
+      ? const Color(0xFFC7F000).withOpacity(0.25)
+      : const Color(0xFF558B2F).withOpacity(0.3);
+
+    final titleCol = isDark ? Colors.white : Colors.black87;
+    final subCol = isDark ? Colors.white38 : Colors.black54;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFC7F000).withValues(alpha: 0.25), width: 1.5),
-        gradient: const LinearGradient(
+        border: Border.all(color: borderCol, width: 1.5),
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF182310),
-            Color(0xFF0F150A),
-          ],
+          colors: gradColors,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFC7F000).withValues(alpha: 0.1),
+            color: const Color(0xFFC7F000).withOpacity(isDark ? 0.1 : 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           )
@@ -157,12 +174,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             width: 76,
             height: 76,
             decoration: BoxDecoration(
-              color: const Color(0xFFC7F000).withValues(alpha: 0.15),
+              color: const Color(0xFFC7F000).withOpacity(0.15),
               shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFC7F000), width: 2),
+              border: Border.all(color: isDark ? const Color(0xFFC7F000) : const Color(0xFF558B2F), width: 2),
             ),
-            child: const Center(
-              child: Icon(Icons.person, color: Color(0xFFC7F000), size: 40),
+            child: Center(
+              child: Icon(Icons.person, color: isDark ? const Color(0xFFC7F000) : const Color(0xFF558B2F), size: 40),
             ),
           ),
           const SizedBox(width: 18),
@@ -173,23 +190,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFC7F000),
+                    color: isDark ? const Color(0xFFC7F000) : const Color(0xFF558B2F),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     user.membershipType == MembershipType.trainer ? 'ELITE TRAINER' : 'WARRIOR ATHLETE',
-                    style: const TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.8),
+                    style: TextStyle(
+                      color: isDark ? Colors.black : Colors.white,
+                      fontSize: 10, 
+                      fontWeight: FontWeight.w900, 
+                      letterSpacing: 0.8,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   user.name.toUpperCase(),
-                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900, height: 1.1),
+                  style: TextStyle(color: titleCol, fontSize: 22, fontWeight: FontWeight.w900, height: 1.1),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Joined: ${_formatDate(user.registrationDate ?? DateTime.now())}',
-                  style: const TextStyle(color: Colors.white38, fontSize: 12),
+                  style: TextStyle(color: subCol, fontSize: 12),
                 ),
               ],
             ),
@@ -199,13 +221,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildInfoTile(IconData icon, String title, String value, Color accent) {
+  Widget _buildInfoTile(IconData icon, String title, String value, Color accent, Color bg, Color mainText, Color subText) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
+        color: bg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: mainText.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,21 +239,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(width: 6),
               Text(
                 title,
-                style: const TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.8),
+                style: TextStyle(color: subText, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.8),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+            style: TextStyle(color: mainText, fontSize: 16, fontWeight: FontWeight.w900),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMembershipDetailCard(UserProfile user, Color cardBg, Color accent) {
+  Widget _buildMembershipDetailCard(UserProfile user, Color bg, Color accent, Color mainText, Color subText) {
     final fee = user.membershipType == MembershipType.trainer ? '15,000 PKR' : '10,000 PKR';
     final label = user.membershipType == MembershipType.trainer
         ? 'Trainer Monthly Package (incl. personal coach)'
@@ -240,16 +262,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
+        color: bg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: mainText.withOpacity(0.05)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.1),
+              color: accent.withOpacity(0.1),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(Icons.credit_card, color: accent, size: 24),
@@ -261,12 +283,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   user.membershipType.name.toUpperCase(),
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14),
+                  style: TextStyle(color: mainText, fontWeight: FontWeight.w900, fontSize: 14),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   label,
-                  style: const TextStyle(color: Colors.white38, fontSize: 12),
+                  style: TextStyle(color: subText, fontSize: 12),
                 ),
               ],
             ),
@@ -279,9 +301,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 fee,
                 style: TextStyle(color: accent, fontWeight: FontWeight.w900, fontSize: 16),
               ),
-              const Text(
+              Text(
                 '/month',
-                style: TextStyle(color: Colors.white38, fontSize: 11),
+                style: TextStyle(color: subText, fontSize: 11),
               ),
             ],
           ),
@@ -290,13 +312,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildPreferencesCard(UserProvider userProv, UserProfile user, Color cardBg, Color accent) {
+  Widget _buildPreferencesCard(UserProvider userProv, UserProfile user, Color bg, Color accent, Color mainText, Color subText) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
+        color: bg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: mainText.withOpacity(0.05)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -305,11 +327,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Icon(Icons.dark_mode, color: accent, size: 22),
               const SizedBox(width: 12),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('DARK MODE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14)),
-                  Text('Toggle UI theme colors', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                  Text('DARK MODE', style: TextStyle(color: mainText, fontWeight: FontWeight.w800, fontSize: 14)),
+                  Text('Toggle UI theme colors', style: TextStyle(color: subText, fontSize: 11)),
                 ],
               ),
             ],
@@ -332,7 +354,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+          ? const Color(0xFF121212) 
+          : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -371,7 +395,16 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    // Dynamic text colors & container styles inside bottom sheet editor
+    final textCol = isDark ? Colors.white : Colors.black87;
     final primaryColor = const Color(0xFFC7F000);
+    final labelStyleCol = isDark ? primaryColor : const Color(0xFF4E7E00);
+    final fillCol = isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05);
+    final dropCol = isDark ? const Color(0xFF1A1A1A) : Colors.white;
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
@@ -389,25 +422,25 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'EDIT WARRIOR BIOMETRICS',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                    style: TextStyle(color: textCol, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 0.5),
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Colors.white54),
+                    icon: Icon(Icons.close, color: textCol.withOpacity(0.6)),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
               TextFormField(
                 initialValue: _name,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: textCol),
                 decoration: InputDecoration(
                   labelText: 'FULL NAME',
-                  labelStyle: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                  labelStyle: TextStyle(color: labelStyleCol, fontSize: 12, fontWeight: FontWeight.bold),
                   filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.05),
+                  fillColor: fillCol,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 ),
                 validator: (v) => (v == null || v.isEmpty) ? 'Enter name' : null,
@@ -416,13 +449,13 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               const SizedBox(height: 12),
               TextFormField(
                 initialValue: _height?.toString(),
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: textCol),
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   labelText: 'HEIGHT (CM)',
-                  labelStyle: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                  labelStyle: TextStyle(color: labelStyleCol, fontSize: 12, fontWeight: FontWeight.bold),
                   filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.05),
+                  fillColor: fillCol,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 ),
                 onSaved: (v) => _height = v == null || v.isEmpty ? null : double.tryParse(v),
@@ -430,13 +463,13 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: _sex,
-                dropdownColor: const Color(0xFF1A1A1A),
-                style: const TextStyle(color: Colors.white),
+                dropdownColor: dropCol,
+                style: TextStyle(color: textCol),
                 decoration: InputDecoration(
                   labelText: 'GENDER',
-                  labelStyle: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                  labelStyle: TextStyle(color: labelStyleCol, fontSize: 12, fontWeight: FontWeight.bold),
                   filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.05),
+                  fillColor: fillCol,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 ),
                 items: const [
@@ -449,13 +482,13 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               const SizedBox(height: 12),
               DropdownButtonFormField<MemberCategory>(
                 value: _memberCategory,
-                dropdownColor: const Color(0xFF1A1A1A),
-                style: const TextStyle(color: Colors.white),
+                dropdownColor: dropCol,
+                style: TextStyle(color: textCol),
                 decoration: InputDecoration(
                   labelText: 'MEMBER CATEGORY',
-                  labelStyle: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                  labelStyle: TextStyle(color: labelStyleCol, fontSize: 12, fontWeight: FontWeight.bold),
                   filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.05),
+                  fillColor: fillCol,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 ),
                 items: MemberCategory.values
@@ -466,13 +499,13 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               const SizedBox(height: 12),
               DropdownButtonFormField<Goal>(
                 value: _goal,
-                dropdownColor: const Color(0xFF1A1A1A),
-                style: const TextStyle(color: Colors.white),
+                dropdownColor: dropCol,
+                style: TextStyle(color: textCol),
                 decoration: InputDecoration(
                   labelText: 'PRIMARY GOAL',
-                  labelStyle: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                  labelStyle: TextStyle(color: labelStyleCol, fontSize: 12, fontWeight: FontWeight.bold),
                   filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.05),
+                  fillColor: fillCol,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 ),
                 items: Goal.values
@@ -483,13 +516,13 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               const SizedBox(height: 12),
               DropdownButtonFormField<MembershipType>(
                 value: _membershipType,
-                dropdownColor: const Color(0xFF1A1A1A),
-                style: const TextStyle(color: Colors.white),
+                dropdownColor: dropCol,
+                style: TextStyle(color: textCol),
                 decoration: InputDecoration(
                   labelText: 'MEMBERSHIP LEVEL',
-                  labelStyle: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                  labelStyle: TextStyle(color: labelStyleCol, fontSize: 12, fontWeight: FontWeight.bold),
                   filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.05),
+                  fillColor: fillCol,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 ),
                 items: const [

@@ -23,6 +23,7 @@ class StepProvider extends ChangeNotifier {
   int _lastSensorSteps = 0;
   DateTime? _lastEventTime;
   bool _initialized = false;
+  bool _isFirstEventOfSession = true;
 
   int get steps => _steps;
   int get heartRate => _heartRate;
@@ -228,6 +229,7 @@ class StepProvider extends ChangeNotifier {
   }
 
   void _startPedometerFallback() {
+    _isFirstEventOfSession = true;
     _pedometerSubscription?.cancel();
     _pedometerSubscription = Pedometer.stepCountStream.listen(
       (event) async {
@@ -237,16 +239,40 @@ class StepProvider extends ChangeNotifier {
         if (_lastSensorSteps == 0) {
           _lastSensorSteps = event.steps;
           _lastEventTime = now;
+          _isFirstEventOfSession = false;
         } else if (event.steps < _lastSensorSteps) {
           _lastSensorSteps = event.steps;
           _lastEventTime = now;
+          _isFirstEventOfSession = false;
         } else {
           final diff = event.steps - _lastSensorSteps;
           if (diff > 0) {
-            _steps += diff;
+            bool acceptSteps = false;
+            
+            if (_isFirstEventOfSession) {
+              // First event since app launch/resume: accept all steps (within sanity limits)
+              if (diff < 100000) {
+                acceptSteps = true;
+              }
+            } else {
+              // Active session: filter out jerks/shakes
+              final seconds = _lastEventTime == null ? 0.0 : now.difference(_lastEventTime!).inMilliseconds / 1000.0;
+              // Allow up to 4 steps/second (running speed), minimum 2 steps per update interval.
+              double maxPossibleSteps = (seconds * 4.0).clamp(2.0, 100.0);
+              if (diff <= maxPossibleSteps) {
+                acceptSteps = true;
+              } else {
+                debugPrint('Pedometer Filter: Ignored $diff steps in $seconds seconds (max allowed: $maxPossibleSteps) as false jerk.');
+              }
+            }
+
+            if (acceptSteps) {
+              _steps += diff;
+            }
+            _lastSensorSteps = event.steps;
+            _lastEventTime = now;
+            _isFirstEventOfSession = false;
           }
-          _lastSensorSteps = event.steps;
-          _lastEventTime = now;
         }
         
         notifyListeners();
@@ -254,6 +280,11 @@ class StepProvider extends ChangeNotifier {
       },
       onError: (error) => debugPrint('Pedometer Error: $error'),
     );
+  }
+
+  void handleAppResume() {
+    _isFirstEventOfSession = true;
+    syncStepsWithSystem();
   }
 
   void debugIncrementSteps(int amount) {

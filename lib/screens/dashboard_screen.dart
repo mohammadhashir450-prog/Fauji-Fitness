@@ -34,6 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _fetchCurrentLocation();
+      context.read<StepProvider>().handleAppResume();
     }
   }
 
@@ -195,24 +196,26 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     );
   }
 
-  Widget _buildTextStat(String value, String title) {
+  Widget _buildTextStat(String value, String title, IconData icon, Color iconColor) {
     return Column(
       children: [
+        Icon(icon, color: iconColor, size: 20),
+        const SizedBox(height: 8),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: FontWeight.w900,
-            color: Colors.lightBlueAccent,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           title,
           style: const TextStyle(
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Colors.white70,
+            color: Colors.white38,
           ),
         ),
       ],
@@ -538,32 +541,45 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                '${stepData.heartPoints}',
-                                style: const TextStyle(
-                                  fontSize: 56,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.redAccent,
-                                  height: 1.1,
-                                ),
-                              ),
-                              Text(
                                 '${stepData.steps}',
                                 style: const TextStyle(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w800,
-                                  color: neonGreen,
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  height: 1.0,
                                 ),
                               ),
                               const SizedBox(height: 4),
+                              const Text(
+                                'STEPS',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: neonGreen,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   const Icon(Icons.favorite, color: Colors.redAccent, size: 14),
                                   const SizedBox(width: 4),
                                   Text(
-                                    stepData.heartRate > 0 ? '${stepData.heartRate} BPM' : '-- BPM',
+                                    '${stepData.heartPoints} pts',
                                     style: const TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 14),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    '${stepData.caloriesBurned} cal',
+                                    style: const TextStyle(
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.white70,
                                     ),
@@ -598,10 +614,10 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buildTextStat('${stepData.caloriesBurned}', 'Cal'),
-                        _buildTextStat(distanceKm, 'km'),
-                        _buildTextStat('${stepData.activeMinutes}', 'Move Min'),
-                        _buildTextStat(stepData.heartRate > 0 ? '${stepData.heartRate}' : '--', 'BPM'),
+                        _buildTextStat('${stepData.caloriesBurned}', 'Cal', Icons.local_fire_department, Colors.orangeAccent),
+                        _buildTextStat(distanceKm, 'km', Icons.directions_walk, Colors.lightBlueAccent),
+                        _buildTextStat('${stepData.activeMinutes}', 'Min', Icons.timer_outlined, Colors.amberAccent),
+                        _buildTextStat(stepData.heartRate > 0 ? '${stepData.heartRate}' : '--', 'BPM', Icons.favorite, Colors.redAccent),
                       ],
                     ),
                   ],
